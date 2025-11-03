@@ -1,0 +1,26 @@
+# Core Django
+Django
+djangorestframework
+django-cors-headers
+
+# Document Processing
+PyMuPDF
+Pillow
+pdf2image
+
+# Image Processing & OCR Support
+opencv-python
+numpy
+
+# API Clients & Utilities
+openai
+python-dotenv
+# python-magic-bin  # For file type detection on Windows
+
+# Database
+psycopg2-binary  # Optional for PostgreSQL
+
+# Export Libraries - Excel, PDF, and Word
+openpyxl
+reportlab
+python-docx
