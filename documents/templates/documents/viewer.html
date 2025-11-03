@@ -1,0 +1,674 @@
+{% extends 'documents/base.html' %}
+
+{% block title %}{{ document.title }} - Document Viewer{% endblock %}
+
+{% block extra_css %}
+<style>
+    .viewer-container {
+        display: flex;
+        gap: 1rem;
+        min-height: 80vh;
+    }
+
+    .pages-sidebar {
+        flex: 0 0 250px;
+        background: white;
+        border-radius: 10px;
+        padding: 1rem;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+
+    .page-thumbnail {
+        cursor: pointer;
+        border: 2px solid transparent;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+        padding: 0.5rem;
+        transition: all 0.2s;
+    }
+
+    .page-thumbnail:hover {
+        border-color: #667eea;
+        background-color: #f8f9fa;
+    }
+
+    .page-thumbnail.active {
+        border-color: #667eea;
+        background-color: #e7f3ff;
+    }
+
+    .page-thumbnail img {
+        width: 100%;
+        border-radius: 5px;
+    }
+
+    .main-viewer {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        padding: 2rem;
+    }
+
+    .page-image-container {
+        text-align: center;
+        margin-bottom: 2rem;
+        position: relative;
+    }
+
+    .page-image {
+        max-width: 100%;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .content-blocks {
+        margin-top: 2rem;
+    }
+
+    .block-item {
+        background: #f8f9fa;
+        border-left: 4px solid #667eea;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-radius: 5px;
+    }
+
+    .block-type {
+        display: inline-block;
+        background: #667eea;
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-right: 0.5rem;
+    }
+
+    .block-type.paragraph { background: #667eea; }
+    .block-type.heading { background: #f57c00; }
+    .block-type.table { background: #28a745; }
+    .block-type.form { background: #dc3545; }
+    .block-type.list { background: #17a2b8; }
+    .block-type.handwriting { background: #6c757d; }
+
+    .confidence-badge {
+        display: inline-block;
+        background: #ffc107;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-size: 0.875rem;
+    }
+
+    .confidence-high { background: #28a745; color: white; }
+    .confidence-medium { background: #ffc107; }
+    .confidence-low { background: #dc3545; color: white; }
+
+    .table-viewer {
+        overflow-x: auto;
+        margin-top: 1rem;
+    }
+
+    .table-viewer table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .table-viewer th,
+    .table-viewer td {
+        border: 1px solid #ddd;
+        padding: 0.5rem;
+        text-align: left;
+    }
+
+    .table-viewer th {
+        background-color: #667eea;
+        color: white;
+        font-weight: 600;
+    }
+
+    .form-viewer {
+        margin-top: 1rem;
+    }
+
+    .form-field {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        margin-bottom: 0.5rem;
+        border-radius: 5px;
+    }
+
+    .form-field label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-field .value {
+        color: #667eea;
+        font-weight: 500;
+    }
+
+    .metadata-section {
+        background: #e7f3ff;
+        padding: 1rem;
+        border-radius: 5px;
+        margin-bottom: 2rem;
+    }
+
+    .search-highlight {
+        background-color: yellow;
+        padding: 2px 4px;
+        border-radius: 2px;
+    }
+
+    /* Image enlargement modal */
+    .image-modal {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        overflow: auto;
+    }
+
+    .image-modal-content {
+        margin: auto;
+        display: block;
+        max-width: 90%;
+        max-height: 90vh;
+        padding: 20px;
+        animation: zoom 0.3s;
+    }
+
+    @keyframes zoom {
+        from {transform: scale(0)}
+        to {transform: scale(1)}
+    }
+
+    .image-modal-close {
+        position: absolute;
+        top: 15px;
+        right: 35px;
+        color: #f1f1f1;
+        font-size: 40px;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.3s;
+    }
+
+    .image-modal-close:hover,
+    .image-modal-close:focus {
+        color: #bbb;
+    }
+
+    .image-modal-caption {
+        text-align: center;
+        color: #ccc;
+        padding: 10px 0;
+        font-size: 18px;
+    }
+
+    .page-thumbnail {
+        cursor: pointer;
+        position: relative;
+    }
+
+    .page-thumbnail-image-wrapper {
+        position: relative;
+        overflow: hidden;
+        border-radius: 5px;
+    }
+
+    .page-thumbnail-enlarge-icon {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.2s;
+        cursor: zoom-in;
+        z-index: 10;
+    }
+
+    .page-thumbnail:hover .page-thumbnail-enlarge-icon {
+        opacity: 1;
+    }
+
+    .page-thumbnail-enlarge-icon:hover {
+        background: rgba(0, 0, 0, 0.9);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'documents:home' %}">Home</a></li>
+                <li class="breadcrumb-item active">{{ document.title }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Document Info -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h2 class="mb-3"><i class="fas fa-file-alt me-2"></i>{{ document.title }}</h2>
+                <div class="row mt-3">
+                    <div class="col-md-3">
+                        <strong>Status:</strong>
+                        <span class="badge bg-success">{{ document.status|upper }}</span>
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Total Pages:</strong> {{ document.total_pages }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>File Type:</strong> {{ document.file_type|upper }}
+                    </div>
+                    <div class="col-md-3">
+                        <strong>Processing Time:</strong>
+                        {% if document.processing_time %}
+                            {{ document.processing_time|floatformat:2 }}s
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search Bar -->
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="input-group">
+                    <input type="text" id="content-search" class="form-control" placeholder="Search within this document...">
+                    <button class="btn btn-primary" onclick="searchContent()">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Viewer -->
+<div class="viewer-container">
+    <!-- Pages Sidebar -->
+    <div class="pages-sidebar">
+        <h5 class="mb-3"><i class="fas fa-images me-2"></i>Pages</h5>
+        <div id="pages-list">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-viewer">
+        <div id="page-viewer">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading page content...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Image Enlargement Modal -->
+<div id="imageModal" class="image-modal">
+    <span class="image-modal-close" onclick="closeImageModal()">&times;</span>
+    <img class="image-modal-content" id="modalImage">
+    <div class="image-modal-caption" id="modalCaption"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const documentId = parseInt("{{ document.id }}");
+    let pages = [];
+    let currentPage = null;
+
+    $(document).ready(function() {
+        loadPages();
+    });
+
+    function loadPages() {
+        $.get(`/api/documents/${documentId}/pages/`, function(data) {
+            pages = data;
+            displayPagesList(pages);
+            if (pages.length > 0) {
+                loadPage(pages[0].id);
+            }
+        });
+    }
+
+    function displayPagesList(pages) {
+        const container = $('#pages-list');
+        container.empty();
+
+        pages.forEach(page => {
+            const thumbnail = `
+                <div class="page-thumbnail" data-page-id="${page.id}" onclick="loadPage(${page.id})">
+                    <div class="page-thumbnail-image-wrapper">
+                        <img src="${page.image}" alt="Page ${page.page_number}">
+                        <div class="page-thumbnail-enlarge-icon" onclick="event.stopPropagation(); enlargeImage('${page.image}', 'Page ${page.page_number}');">
+                            <i class="fas fa-search-plus"></i>
+                        </div>
+                    </div>
+                    <div class="text-center mt-2">
+                        <small><strong>Page ${page.page_number}</strong></small>
+                        <br>
+                        <small class="text-muted">${page.detected_language}</small>
+                    </div>
+                </div>
+            `;
+            container.append(thumbnail);
+        });
+    }
+
+    function loadPage(pageId) {
+        currentPage = pages.find(p => p.id === pageId);
+
+        // Update active thumbnail
+        $('.page-thumbnail').removeClass('active');
+        $(`.page-thumbnail[data-page-id="${pageId}"]`).addClass('active');
+
+        // Load page content
+        $.get(`/api/pages/${pageId}/`, function(page) {
+            displayPage(page);
+        });
+    }
+
+    function displayPage(page) {
+        const viewer = $('#page-viewer');
+        viewer.empty();
+
+        // Page metadata
+        const metadata = `
+            <div class="metadata-section">
+                <h4>Page ${page.page_number} Metadata</h4>
+                <div class="row">
+                    <div class="col-md-4">
+                        <strong>Language:</strong> ${page.detected_language}
+                        <span class="badge bg-info">${(page.language_confidence * 100).toFixed(1)}%</span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Page Type:</strong> ${page.page_type || 'N/A'}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Rotation Applied:</strong> ${page.applied_rotation}°
+                    </div>
+                </div>
+            </div>
+        `;
+        viewer.append(metadata);
+
+        // Content blocks
+        if (page.content_blocks && page.content_blocks.length > 0) {
+            viewer.append('<h4 class="mb-3"><i class="fas fa-list me-2"></i>Extracted Content</h4>');
+            viewer.append('<div class="content-blocks" id="content-blocks"></div>');
+
+            page.content_blocks.forEach(block => {
+                displayBlock(block);
+            });
+        } else {
+            viewer.append('<div class="alert alert-info">No content blocks extracted yet.</div>');
+        }
+    }
+
+    function displayBlock(block) {
+        const container = $('#content-blocks');
+
+        const confidenceClass = block.confidence > 0.8 ? 'confidence-high' :
+                               block.confidence > 0.6 ? 'confidence-medium' : 'confidence-low';
+
+        let blockHtml = `
+            <div class="block-item" id="block-${block.id}">
+                <div class="mb-2 d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="block-type ${block.block_type}">${block.block_type.toUpperCase()}</span>
+                        <span class="confidence-badge ${confidenceClass}">
+                            ${(block.confidence * 100).toFixed(1)}% confidence
+                        </span>
+                        ${block.is_handwritten ? '<span class="badge bg-secondary ms-2">Handwritten</span>' : ''}
+                    </div>
+                    <div class="btn-group" style="position: relative; z-index: 100;">
+                        <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-download me-1"></i>Download
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" style="z-index: 150;">
+                            ${block.block_type === 'table' ? `
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'xlsx'); return false;">
+                                    <i class="fas fa-file-excel me-2"></i>Excel (.xlsx)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'csv'); return false;">
+                                    <i class="fas fa-table me-2"></i>CSV (.csv)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'pdf'); return false;">
+                                    <i class="fas fa-file-pdf me-2"></i>PDF
+                                </a></li>
+                            ` : ''}
+                            ${block.block_type === 'form' ? `
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'json'); return false;">
+                                    <i class="fas fa-code me-2"></i>JSON (.json)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'pdf'); return false;">
+                                    <i class="fas fa-file-pdf me-2"></i>PDF
+                                </a></li>
+                            ` : ''}
+                            ${block.block_type !== 'table' && block.block_type !== 'form' ? `
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'txt'); return false;">
+                                    <i class="fas fa-file-alt me-2"></i>Text (.txt)
+                                </a></li>
+                                <li><a class="dropdown-item" href="#" onclick="downloadBlock(${block.id}, 'json'); return false;">
+                                    <i class="fas fa-code me-2"></i>JSON (.json)
+                                </a></li>
+                            ` : ''}
+                        </ul>
+                    </div>
+                </div>
+        `;
+
+        // Text content
+        if (block.text_content) {
+            blockHtml += `<div class="mb-2"><strong>Text:</strong><br>${escapeHtml(block.text_content)}</div>`;
+        }
+
+        // Table data
+        if (block.table_data && block.table_data.rows && block.table_data.rows.length > 0) {
+            blockHtml += '<div class="table-viewer">';
+            blockHtml += renderTable(block.table_data);
+            blockHtml += '</div>';
+        }
+
+        // Form data
+        if (block.form_data && block.form_data.fields && block.form_data.fields.length > 0) {
+            blockHtml += '<div class="form-viewer">';
+            blockHtml += '<h6>Form Fields:</h6>';
+            block.form_data.fields.forEach(field => {
+                const filledBadge = field.is_filled ? '<span class="badge bg-success ms-2">Filled</span>' : '';
+                blockHtml += `
+                    <div class="form-field">
+                        <label>${escapeHtml(field.field_label || field.field_name)}:</label> ${filledBadge}
+                        <div class="value">${escapeHtml(field.field_value || '(empty)')}</div>
+                        <small class="text-muted">Type: ${field.field_type}</small>
+                    </div>
+                `;
+            });
+            blockHtml += '</div>';
+        }
+
+        blockHtml += '</div>';
+        container.append(blockHtml);
+    }
+
+    function renderTable(tableData) {
+        let html = '<table class="table table-bordered">';
+
+        // Headers
+        if (tableData.headers && tableData.headers.length > 0) {
+            html += '<thead><tr>';
+            tableData.headers.forEach(header => {
+                html += `<th>${escapeHtml(header.text)}</th>`;
+            });
+            html += '</tr></thead>';
+        }
+
+        // Rows
+        if (tableData.rows && tableData.rows.length > 0) {
+            html += '<tbody>';
+            tableData.rows.forEach(row => {
+                html += '<tr>';
+                row.cells.forEach(cell => {
+                    html += `<td>${escapeHtml(cell.text)}</td>`;
+                });
+                html += '</tr>';
+            });
+            html += '</tbody>';
+        }
+
+        html += '</table>';
+        return html;
+    }
+
+    function searchContent() {
+        const query = $('#content-search').val().toLowerCase();
+        if (!query) {
+            // Remove all highlights
+            $('.search-highlight').contents().unwrap();
+            return;
+        }
+
+        // Search through all blocks
+        $('.block-item').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(query)) {
+                $(this).show();
+                // Highlight matches (simplified)
+                highlightText($(this), query);
+            } else {
+                $(this).hide();
+            }
+        });
+    }
+
+    function highlightText(element, query) {
+        // Simple highlight implementation
+        const html = element.html();
+        const regex = new RegExp(`(${query})`, 'gi');
+        element.html(html.replace(regex, '<span class="search-highlight">$1</span>'));
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    // Download functions
+    function downloadContent(format) {
+        window.location.href = `/api/documents/${documentId}/download/?format=${format}`;
+    }
+
+    function downloadOriginal() {
+        window.location.href = `/api/documents/${documentId}/download-original/`;
+    }
+
+    function downloadTables(format) {
+        window.location.href = `/api/documents/${documentId}/download-tables/?format=${format}`;
+    }
+
+    function downloadBlock(blockId, format) {
+        // Immediately trigger download for the specific block
+        const url = `/api/blocks/${blockId}/export/?export_format=${format}`;
+        console.log(`Downloading block ${blockId} as ${format} from ${url}`);
+
+        // Test the URL first with fetch to see if there's an error
+        fetch(url)
+            .then(response => {
+                console.log('Download response:', response.status, response.statusText);
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        console.error('Download error:', err);
+                        alert(`Download failed: ${err.message || err.error || 'Unknown error'}\n\nCheck console for details.`);
+                        throw new Error(JSON.stringify(err));
+                    });
+                }
+                // If successful, trigger the actual download
+                window.location.href = url;
+            })
+            .catch(error => {
+                console.error('Download failed:', error);
+            });
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Image enlargement functions
+    function enlargeImage(imageSrc, caption) {
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('modalImage');
+        const modalCaption = document.getElementById('modalCaption');
+
+        modal.style.display = 'block';
+        modalImg.src = imageSrc;
+        modalCaption.innerHTML = caption;
+    }
+
+    function closeImageModal() {
+        const modal = document.getElementById('imageModal');
+        modal.style.display = 'none';
+    }
+
+    // Close modal on ESC key or click outside
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+            closeImageModal();
+        }
+    });
+
+    document.getElementById('imageModal')?.addEventListener('click', function(event) {
+        if (event.target === this) {
+            closeImageModal();
+        }
+    });
+</script>
+{% endblock %}

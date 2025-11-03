@@ -1,0 +1,803 @@
+{% extends 'documents/base.html' %}
+
+{% block title %}Document Upload - Document AI System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-area {
+        border: 3px dashed #ccc;
+        border-radius: 15px;
+        padding: 3rem;
+        text-align: center;
+        background-color: #f8f9fa;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        min-height: 300px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .upload-area.drag-over {
+        border-color: #667eea;
+        background-color: #e7f3ff;
+        transform: scale(1.02);
+    }
+
+    .upload-area i {
+        font-size: 4rem;
+        color: #667eea;
+        margin-bottom: 1rem;
+    }
+
+    .upload-area p {
+        font-size: 1.2rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+
+    .upload-area small {
+        color: #999;
+    }
+
+    .document-card {
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+
+    .document-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        display: inline-block;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        white-space: nowrap;
+    }
+
+    .status-uploaded {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1565c0;
+        border: 2px solid #1976d2;
+    }
+    .status-processing {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        color: #e65100;
+        border: 2px solid #f57c00;
+        animation: pulse 2s infinite;
+    }
+    .status-cancelling {
+        background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+        color: #d84315;
+        border: 2px solid #e65100;
+    }
+    .status-completed {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        color: #2e7d32;
+        border: 2px solid #388e3c;
+    }
+    .status-failed {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        color: #c62828;
+        border: 2px solid #d32f2f;
+    }
+    .status-cancelled {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        color: #6a1b9a;
+        border: 2px solid #7b1fa2;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .processing-progress {
+        margin-top: 0.75rem;
+    }
+
+    .processing-progress .progress {
+        height: 6px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .processing-progress .progress-bar {
+        background: linear-gradient(90deg, #f57c00, #ff9800, #f57c00);
+        background-size: 200% 100%;
+        animation: progressAnimation 2s ease-in-out infinite;
+    }
+
+    @keyframes progressAnimation {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .processing-progress-text {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 0.25rem;
+        text-align: center;
+    }
+
+    .document-card {
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .document-card .card-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .document-card .card-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 10px;
+    }
+
+    .document-card .card-title-wrapper {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .document-card .card-title {
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .document-card .card-status {
+        flex-shrink: 0;
+    }
+
+    .document-card .card-meta {
+        margin-bottom: 1rem;
+    }
+
+    .document-card .card-actions {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .preview-inline {
+        height: 450px;
+        max-height: 450px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border: 2px dashed #dee2e6;
+        border-radius: 10px;
+        padding: 15px;
+        overflow: auto;
+        position: relative;
+    }
+
+    .preview-inline img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .preview-inline canvas {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .preview-inline .preview-info {
+        width: 100%;
+        font-size: 0.9rem;
+    }
+
+    .progress-container {
+        margin-top: 2rem;
+    }
+
+    #file-input {
+        display: none;
+    }
+
+    .search-box {
+        margin-bottom: 2rem;
+    }
+
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h3 class="mb-3">
+            <i class="fas fa-cloud-upload-alt text-primary"></i>
+            Document Upload & Processing
+        </h3>
+        <p class="mb-4">Upload PDF, images, or scanned documents for AI-powered content extraction</p>
+    </div>
+</div>
+
+<!-- Upload Area -->
+<div class="row mb-5">
+    <div class="col-lg-7">
+        <div class="card h-100">
+            <div class="card-body p-4">
+                <div id="upload-area" class="upload-area">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p><strong>Drag & Drop</strong> your documents here</p>
+                    <p>or</p>
+                    <button class="btn btn-primary btn-lg" onclick="document.getElementById('file-input').click()">
+                        <i class="fas fa-folder-open me-2"></i>Browse Files
+                    </button>
+                    <input type="file" id="file-input" accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif,.bmp" multiple>
+                    <small class="mt-3 d-block">Supported formats: PDF, JPG, PNG, TIFF, BMP (Max 50MB per file)</small>
+                </div>
+
+                <div id="upload-progress" class="progress-container" style="display: none;">
+                    <h5>Uploading...</h5>
+                    <div class="progress">
+                        <div id="progress-bar" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="card h-100">
+            <div class="card-body p-4 d-flex flex-column">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0"><i class="fas fa-eye me-2"></i>Document Preview</h5>
+                    <button id="process-btn" class="btn btn-success btn-sm" style="display:none;" onclick="processSelectedDocument()">
+                        <i class="fas fa-play me-1"></i>Process Now
+                    </button>
+                </div>
+                <div id="preview-inline" class="preview-inline flex-grow-1">
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-image" style="font-size: 60px; opacity: 0.3;"></i>
+                        <p class="mt-3">Select or drop a file to preview</p>
+                    </div>
+                </div>
+                <div id="preview-controls" class="preview-controls text-center mt-2" style="display:none;">
+                    <button class="btn btn-sm btn-outline-secondary" onclick="previousPage()">
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <span id="page-info" class="mx-3">
+                        Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                    </span>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="nextPage()">
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Documents List -->
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3 class="mb-0">
+                <i class="fas fa-list me-2"></i>Recent Documents
+            </h3>
+            <div>
+                <a href="{% url 'documents:all_documents' %}" class="btn btn-primary me-2">
+                    <i class="fas fa-folder-open me-1"></i> View All Documents
+                </a>
+                <button class="btn btn-outline-primary" onclick="loadDocuments()">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+        </div>
+        <div id="documents-list" class="row">
+            <div class="col-12 text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let allDocuments = [];
+    let selectedFile = null;
+    let pdfDoc = null;
+    let currentPageNum = 1;
+    let totalPagesNum = 0;
+    let pageRendering = false;
+
+    // Configure PDF.js worker
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+    // Load documents on page load
+    $(document).ready(function() {
+        loadDocuments();
+        setupUpload();
+    });
+
+    function setupUpload() {
+        const uploadArea = $('#upload-area');
+        const fileInput = $('#file-input');
+
+        // Drag and drop
+        uploadArea.on('dragover', function(e) {
+            e.preventDefault();
+            $(this).addClass('drag-over');
+        });
+
+        uploadArea.on('dragleave', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+        });
+
+        uploadArea.on('drop', function(e) {
+            e.preventDefault();
+            $(this).removeClass('drag-over');
+            const files = e.originalEvent.dataTransfer.files;
+            handleFiles(files);
+        });
+
+        // File input
+        fileInput.on('change', function() {
+            const files = this.files;
+            handleFiles(files);
+        });
+    }
+
+    function handleFiles(files) {
+        if (files.length === 0) return;
+
+        // Show preview of first file
+        if (files[0]) {
+            showPreview(files[0]);
+        }
+
+        // For multiple files, upload directly
+        if (files.length > 1) {
+            $('#upload-progress').show();
+            let uploadedCount = 0;
+
+            Array.from(files).forEach((file, index) => {
+                uploadFile(file).then(() => {
+                    uploadedCount++;
+                    const progress = (uploadedCount / files.length) * 100;
+                    $('#progress-bar').css('width', progress + '%');
+
+                    if (uploadedCount === files.length) {
+                        setTimeout(() => {
+                            $('#upload-progress').hide();
+                            $('#progress-bar').css('width', '0%');
+                            loadDocuments();
+                            clearPreview();
+                            alert('All documents uploaded successfully!');
+                        }, 1000);
+                    }
+                });
+            });
+        }
+        // For single file, wait for user to click Process button
+    }
+
+    function uploadFile(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('title', file.name);
+
+        return $.ajax({
+            url: '/api/documents/',
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        });
+    }
+
+    function loadDocuments() {
+        $.get('/api/documents/', function(data) {
+            allDocuments = data.results || data;
+            // Show only latest 6 documents on home page
+            const recentDocs = allDocuments.slice(0, 6);
+            displayDocuments(recentDocs);
+        }).fail(function() {
+            $('#documents-list').html('<div class="col-12"><div class="alert alert-danger">Failed to load documents</div></div>');
+        });
+    }
+
+    function displayDocuments(documents) {
+        const container = $('#documents-list');
+        container.empty();
+
+        if (documents.length === 0) {
+            container.html('<div class="col-12"><div class="alert alert-info">No documents found. Upload your first document above!</div></div>');
+            return;
+        }
+
+        documents.forEach(doc => {
+            const statusClass = 'status-' + doc.status;
+            const icon = doc.file_type === 'pdf' ? 'fa-file-pdf' : 'fa-file-image';
+
+            // Build action buttons
+            let actionButtons = '';
+
+            // View button (always shown for completed)
+            if (doc.status === 'completed') {
+                actionButtons += `<a href="/viewer/${doc.id}/" class="btn btn-primary btn-sm"><i class="fas fa-eye me-1"></i>View</a>`;
+            }
+
+            // Cancel button (for processing)
+            if (doc.status === 'processing') {
+                actionButtons += `<button class="btn btn-danger btn-sm" onclick="cancelDocument(${doc.id})"><i class="fas fa-times me-1"></i>Cancel</button>`;
+            }
+
+            // Retry button (for failed/cancelled)
+            if (doc.status === 'failed' || doc.status === 'cancelled') {
+                actionButtons += `<button class="btn btn-warning btn-sm" onclick="reprocessDocument(${doc.id})"><i class="fas fa-redo me-1"></i>Retry</button>`;
+            }
+
+            // Delete button (always shown)
+            actionButtons += `<button class="btn btn-outline-danger btn-sm" onclick="deleteDocument(${doc.id})"><i class="fas fa-trash me-1"></i>Delete</button>`;
+
+            // Calculate progress percentage for processing documents
+            let progressPercent = 0;
+            let progressText = '';
+
+            if (doc.status === 'processing' || doc.status === 'cancelling') {
+                // Estimate progress based on uploaded time
+                const uploadedTime = new Date(doc.uploaded_at).getTime();
+                const currentTime = new Date().getTime();
+                const elapsed = (currentTime - uploadedTime) / 1000; // seconds
+
+                // Estimate: 1 page takes about 5-10 seconds
+                const estimatedTime = (doc.total_pages || 1) * 7;
+                progressPercent = Math.min(Math.floor((elapsed / estimatedTime) * 100), 95);
+
+                if (doc.status === 'cancelling') {
+                    progressPercent = 100;
+                    progressText = 'Cancelling...';
+                } else {
+                    progressText = `Processing... ${progressPercent}%`;
+                }
+            } else if (doc.status === 'completed') {
+                progressPercent = 100;
+                progressText = 'Completed';
+            }
+
+            const progressBar = (doc.status === 'processing' || doc.status === 'cancelling') ? `
+                <div class="processing-progress">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: ${progressPercent}%" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="processing-progress-text">
+                        <i class="fas fa-cog fa-spin me-1"></i>${progressText}
+                    </div>
+                </div>
+            ` : '';
+
+            const uploadDateTime = new Date(doc.uploaded_at);
+            const timeStr = uploadDateTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            const dateStr = uploadDateTime.toLocaleDateString();
+
+            const card = `
+                <div class="col-md-6 col-lg-4 mb-3" data-doc-id="${doc.id}">
+                    <div class="card document-card">
+                        <div class="card-body">
+                            <div class="card-header-section">
+                                <div class="card-title-wrapper">
+                                    <h5 class="card-title">
+                                        <i class="fas ${icon} me-2"></i>${doc.title}
+                                    </h5>
+                                </div>
+                                <div class="card-status">
+                                    <span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <div class="card-meta">
+                                <p class="card-text mb-0">
+                                    <small class="text-muted">
+                                        <i class="far fa-clock me-1"></i>${timeStr}
+                                        <br>
+                                        <i class="far fa-calendar me-1"></i>${dateStr}
+                                        <br>
+                                        <i class="fas fa-database me-1"></i>${formatFileSize(doc.file_size)}
+                                        <br>
+                                        <i class="fas fa-file me-1"></i>${doc.total_pages} pages
+                                    </small>
+                                </p>
+                            </div>
+                            ${progressBar}
+                            <div class="card-actions">
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.append(card);
+        });
+    }
+
+    function reprocessDocument(docId) {
+        if (!confirm('Are you sure you want to reprocess this document?')) return;
+
+        $.ajax({
+            url: `/api/documents/${docId}/reprocess/`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function() {
+                alert('Document reprocessing started!');
+                loadDocuments();
+            },
+            error: function() {
+                alert('Failed to reprocess document');
+            }
+        });
+    }
+
+    function cancelDocument(docId) {
+        if (!confirm('Are you sure you want to cancel processing this document?')) return;
+
+        // Immediately update UI
+        const card = $(`[data-doc-id="${docId}"]`);
+        const badge = card.find('.status-badge');
+        const buttons = card.find('.card-actions');
+
+        // Update status badge
+        badge.removeClass('status-processing').addClass('status-cancelling').text('CANCELLING');
+
+        // Update buttons
+        buttons.html('<button class="btn btn-secondary btn-sm" disabled><i class="fas fa-spinner fa-spin me-1"></i>Cancelling...</button>');
+
+        $.ajax({
+            url: `/api/documents/${docId}/cancel/`,
+            type: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                // Reload documents to get actual status
+                loadDocuments();
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Failed to cancel document';
+                alert(errorMsg);
+                // Revert on error
+                loadDocuments();
+            }
+        });
+    }
+
+    function deleteDocument(docId) {
+        if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) return;
+
+        // Show loading state
+        const card = $(`[data-doc-id="${docId}"]`);
+        card.find('.card-actions').html('<button class="btn btn-secondary btn-sm" disabled><i class="fas fa-spinner fa-spin me-1"></i>Deleting...</button>');
+
+        $.ajax({
+            url: `/api/documents/${docId}/`,
+            type: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function(response) {
+                // Remove card with animation
+                card.fadeOut(300, function() {
+                    $(this).remove();
+                    // Reload to update list
+                    loadDocuments();
+                });
+            },
+            error: function(xhr) {
+                const errorMsg = xhr.responseJSON?.message || 'Failed to delete document';
+                alert(errorMsg);
+                loadDocuments();
+            }
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Preview functions
+    function showPreview(file) {
+        selectedFile = file;
+        const previewInline = $('#preview-inline');
+        $('#process-btn').show();
+
+        if (file.type.startsWith('image/')) {
+            $('#preview-controls').hide();
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewInline.html(`
+                    <img src="${e.target.result}" alt="Preview">
+                    <div class="preview-info mt-2">
+                        <small><strong>Name:</strong> ${file.name}</small><br>
+                        <small><strong>Size:</strong> ${formatFileSize(file.size)}</small>
+                    </div>
+                `);
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            previewInline.html('<canvas id="pdf-canvas" style="max-width:100%;"></canvas>');
+            loadPDF(file);
+        } else {
+            $('#preview-controls').hide();
+            previewInline.html(`
+                <i class="fas fa-file" style="font-size: 80px; color: #6c757d;"></i>
+                <div class="preview-info text-center mt-3">
+                    <p class="mb-1"><strong>${file.name}</strong></p>
+                    <p class="mb-1">${formatFileSize(file.size)}</p>
+                </div>
+            `);
+        }
+    }
+
+    function loadPDF(file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const typedarray = new Uint8Array(e.target.result);
+            pdfjsLib.getDocument(typedarray).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                totalPagesNum = pdf.numPages;
+                currentPageNum = 1;
+                $('#total-pages').text(totalPagesNum);
+                $('#current-page').text(currentPageNum);
+                $('#preview-controls').show();
+                renderPage(currentPageNum);
+            });
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function renderPage(num) {
+        pageRendering = true;
+        pdfDoc.getPage(num).then(function(page) {
+            const canvas = document.getElementById('pdf-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Get container dimensions
+            const container = $('#preview-inline');
+            const maxWidth = container.width() - 30; // Account for padding
+            const maxHeight = 380; // Leave space for controls and padding
+
+            // Calculate scale to fit within container
+            const viewport = page.getViewport({scale: 1.0});
+            const scaleX = maxWidth / viewport.width;
+            const scaleY = maxHeight / viewport.height;
+            const scale = Math.min(scaleX, scaleY);
+
+            // Get final viewport with calculated scale
+            const scaledViewport = page.getViewport({scale: scale});
+            canvas.height = scaledViewport.height;
+            canvas.width = scaledViewport.width;
+
+            const renderContext = {
+                canvasContext: ctx,
+                viewport: scaledViewport
+            };
+
+            page.render(renderContext).promise.then(function() {
+                pageRendering = false;
+            });
+        });
+        $('#current-page').text(num);
+    }
+
+    function previousPage() {
+        if (currentPageNum <= 1) return;
+        currentPageNum--;
+        renderPage(currentPageNum);
+    }
+
+    function nextPage() {
+        if (currentPageNum >= totalPagesNum) return;
+        currentPageNum++;
+        renderPage(currentPageNum);
+    }
+
+    // Mouse wheel scroll for PDF pages
+    $('#preview-inline').on('wheel', function(e) {
+        if (pdfDoc) {
+            e.preventDefault();
+            if (e.originalEvent.deltaY < 0) {
+                previousPage();
+            } else {
+                nextPage();
+            }
+        }
+    });
+
+    function clearPreview() {
+        selectedFile = null;
+        pdfDoc = null;
+        $('#process-btn').hide();
+        $('#preview-controls').hide();
+        $('#preview-inline').html(`
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-image" style="font-size: 60px; opacity: 0.3;"></i>
+                <p class="mt-3">Select or drop a file to preview</p>
+            </div>
+        `);
+    }
+
+    function processSelectedDocument() {
+        if (!selectedFile) {
+            alert('No file selected');
+            return;
+        }
+
+        // Disable button
+        $('#process-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Processing...');
+
+        // Upload file
+        uploadFile(selectedFile).then(() => {
+            setTimeout(() => {
+                clearPreview();
+                loadDocuments();
+                alert('Document uploaded and processing started!');
+                $('#process-btn').prop('disabled', false).html('<i class="fas fa-play me-1"></i>Process Now');
+            }, 1000);
+        }).catch(() => {
+            $('#process-btn').prop('disabled', false).html('<i class="fas fa-play me-1"></i>Process Now');
+        });
+    }
+
+    // Auto-refresh every 5 seconds to check for processing updates
+    setInterval(function() {
+        const hasProcessing = allDocuments.some(doc => doc.status === 'processing');
+        if (hasProcessing) {
+            loadDocuments();
+        }
+    }, 5000);
+</script>
+{% endblock %}

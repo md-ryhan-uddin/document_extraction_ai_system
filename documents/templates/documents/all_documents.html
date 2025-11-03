@@ -1,0 +1,492 @@
+{% extends 'documents/base.html' %}
+
+{% block title %}All Documents - Document AI System{% endblock %}
+
+{% block extra_css %}
+<style>
+    .document-card {
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .document-card:hover {
+        transform: translateY(-3px);
+    }
+
+    .document-card .card-body {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .document-card .card-header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+        gap: 10px;
+    }
+
+    .document-card .card-title-wrapper {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .document-card .card-title {
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .document-card .card-status {
+        flex-shrink: 0;
+    }
+
+    .document-card .card-meta {
+        margin-bottom: 1rem;
+    }
+
+    .document-card .card-actions {
+        margin-top: auto;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+    }
+
+    .status-badge {
+        padding: 0.35rem 0.8rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        display: inline-block;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        white-space: nowrap;
+    }
+
+    .status-uploaded {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        color: #1565c0;
+        border: 2px solid #1976d2;
+    }
+    .status-processing {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        color: #e65100;
+        border: 2px solid #f57c00;
+        animation: pulse 2s infinite;
+    }
+    .status-cancelling {
+        background: linear-gradient(135deg, #ffe0b2 0%, #ffcc80 100%);
+        color: #d84315;
+        border: 2px solid #e65100;
+    }
+    .status-completed {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        color: #2e7d32;
+        border: 2px solid #388e3c;
+    }
+    .status-failed {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        color: #c62828;
+        border: 2px solid #d32f2f;
+    }
+    .status-cancelled {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+        color: #6a1b9a;
+        border: 2px solid #7b1fa2;
+    }
+
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.7; }
+    }
+
+    .processing-progress {
+        margin-top: 0.75rem;
+    }
+
+    .processing-progress .progress {
+        height: 6px;
+        background-color: #e0e0e0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .processing-progress .progress-bar {
+        background: linear-gradient(90deg, #f57c00, #ff9800, #f57c00);
+        background-size: 200% 100%;
+        animation: progressAnimation 2s ease-in-out infinite;
+    }
+
+    @keyframes progressAnimation {
+        0% { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .processing-progress-text {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 0.25rem;
+        text-align: center;
+    }
+
+    .search-section {
+        background: white;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-bottom: 2rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h2 class="mb-2"><i class="fas fa-folder-open me-2"></i>All Documents</h2>
+            <p class="mb-0">View and manage all your processed documents</p>
+        </div>
+        <a href="{% url 'documents:home' %}" class="btn btn-light">
+            <i class="fas fa-arrow-left me-2"></i>Back to Home
+        </a>
+    </div>
+</div>
+
+<!-- Search and Filter Section -->
+<div class="search-section">
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input type="text" id="search-input" class="form-control" placeholder="Search documents by title...">
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <select id="status-filter" class="form-select">
+                <option value="">All Status</option>
+                <option value="completed">Completed</option>
+                <option value="processing">Processing</option>
+                <option value="failed">Failed</option>
+                <option value="uploaded">Uploaded</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <div class="col-md-3 mb-3">
+            <select id="sort-select" class="form-select">
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="title">Title (A-Z)</option>
+                <option value="size">File Size</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Documents List -->
+<div class="row" id="documents-list">
+    <div class="col-12 text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2 text-muted">Loading documents...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ documents_json|default:'[]'|json_script:"documents-data" }}
+
+<script>
+    window.SERVER_DOCUMENTS = JSON.parse(document.getElementById('documents-data').textContent || '[]');
+</script>
+
+
+<!-- <script>window.SERVER_DOCUMENTS = {{ documents_json|safe }};</script> -->
+
+<script>
+    let allDocuments = window.SERVER_DOCUMENTS || [];
+    let filteredDocuments = [];
+
+    $(document).ready(function() {
+        loadDocuments();
+
+        // Search functionality
+        $('#search-input').on('keyup', function() {
+            filterDocuments();
+        });
+
+        // Filter functionality
+        $('#status-filter, #sort-select').on('change', function() {
+            filterDocuments();
+        });
+
+        // Auto-refresh for processing documents
+        setInterval(function() {
+            const hasProcessing = allDocuments.some(doc => doc.status === 'processing');
+            if (hasProcessing) {
+                loadDocuments();
+            }
+        }, 5000);
+    });
+
+    function loadDocuments() {
+        $.get('/api/documents/', function(data) {
+            allDocuments = data.results || data;
+            filterDocuments();
+        }).fail(function() {
+            $('#documents-list').html('<div class="col-12"><div class="alert alert-danger">Failed to load documents</div></div>');
+        });
+    }
+
+    function filterDocuments() {
+        const searchTerm = $('#search-input').val().toLowerCase();
+        const statusFilter = $('#status-filter').val();
+        const sortBy = $('#sort-select').val();
+
+        // Filter
+        filteredDocuments = allDocuments.filter(doc => {
+            const matchesSearch = doc.title.toLowerCase().includes(searchTerm);
+            const matchesStatus = !statusFilter || doc.status === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+
+        // Sort
+        filteredDocuments.sort((a, b) => {
+            switch(sortBy) {
+                case 'newest':
+                    return new Date(b.uploaded_at) - new Date(a.uploaded_at);
+                case 'oldest':
+                    return new Date(a.uploaded_at) - new Date(b.uploaded_at);
+                case 'title':
+                    return a.title.localeCompare(b.title);
+                case 'size':
+                    return (b.file_size || 0) - (a.file_size || 0);
+                default:
+                    return 0;
+            }
+        });
+
+        displayDocuments(filteredDocuments);
+    }
+
+    function displayDocuments(documents) {
+        const container = $('#documents-list');
+        container.empty();
+
+        if (documents.length === 0) {
+            container.html(`
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p class="mb-0">No documents found matching your criteria.</p>
+                    </div>
+                </div>
+            `);
+            return;
+        }
+
+        documents.forEach(doc => {
+            const statusClass = 'status-' + doc.status;
+            const icon = doc.file_type === 'pdf' ? 'fa-file-pdf' : 'fa-file-image';
+
+            // Build action buttons
+            let actionButtons = '';
+
+            // View button (always shown for completed)
+            if (doc.status === 'completed') {
+                actionButtons += `<a href="/viewer/${doc.id}/" class="btn btn-primary btn-sm"><i class="fas fa-eye me-1"></i>View</a>`;
+            }
+
+            // Cancel button (for processing)
+            if (doc.status === 'processing') {
+                actionButtons += `<button class="btn btn-danger btn-sm" onclick="cancelProcessing(${doc.id})"><i class="fas fa-times me-1"></i>Cancel</button>`;
+            }
+
+            // Retry button (for failed/cancelled)
+            if (doc.status === 'failed' || doc.status === 'cancelled') {
+                actionButtons += `<button class="btn btn-warning btn-sm" onclick="reprocessDocument(${doc.id})"><i class="fas fa-redo me-1"></i>Retry</button>`;
+            }
+
+            // Delete button (always shown)
+            actionButtons += `<button class="btn btn-outline-danger btn-sm" onclick="deleteDocument(${doc.id})"><i class="fas fa-trash me-1"></i>Delete</button>`;
+
+            // Calculate progress percentage for processing documents
+            let progressPercent = 0;
+            let progressText = '';
+
+            if (doc.status === 'processing' || doc.status === 'cancelling') {
+                // Estimate progress based on uploaded time
+                const uploadedTime = new Date(doc.uploaded_at).getTime();
+                const currentTime = new Date().getTime();
+                const elapsed = (currentTime - uploadedTime) / 1000; // seconds
+
+                // Estimate: 1 page takes about 5-10 seconds
+                const estimatedTime = (doc.total_pages || 1) * 7;
+                progressPercent = Math.min(Math.floor((elapsed / estimatedTime) * 100), 95);
+
+                if (doc.status === 'cancelling') {
+                    progressPercent = 100;
+                    progressText = 'Cancelling...';
+                } else {
+                    progressText = `Processing... ${progressPercent}%`;
+                }
+            } else if (doc.status === 'completed') {
+                progressPercent = 100;
+                progressText = 'Completed';
+            }
+
+            const progressBar = (doc.status === 'processing' || doc.status === 'cancelling') ? `
+                <div class="processing-progress">
+                    <div class="progress">
+                        <div class="progress-bar" role="progressbar" style="width: ${progressPercent}%" aria-valuenow="${progressPercent}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="processing-progress-text">
+                        <i class="fas fa-cog fa-spin me-1"></i>${progressText}
+                    </div>
+                </div>
+            ` : '';
+
+            const uploadDateTime = new Date(doc.uploaded_at);
+            const timeStr = uploadDateTime.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+            const dateStr = uploadDateTime.toLocaleDateString();
+
+            const card = `
+                <div class="col-md-6 col-lg-4 mb-3" data-doc-id="${doc.id}">
+                    <div class="card document-card">
+                        <div class="card-body">
+                            <div class="card-header-section">
+                                <div class="card-title-wrapper">
+                                    <h5 class="card-title">
+                                        <i class="fas ${icon} me-2"></i>${doc.title}
+                                    </h5>
+                                </div>
+                                <div class="card-status">
+                                    <span class="status-badge ${statusClass}">${doc.status.toUpperCase()}</span>
+                                </div>
+                            </div>
+                            <div class="card-meta">
+                                <p class="card-text mb-0">
+                                    <small class="text-muted">
+                                        <i class="far fa-clock me-1"></i>${timeStr}
+                                        <br>
+                                        <i class="far fa-calendar me-1"></i>${dateStr}
+                                        <br>
+                                        <i class="fas fa-database me-1"></i>${formatFileSize(doc.file_size)}
+                                        <br>
+                                        <i class="fas fa-file me-1"></i>${doc.total_pages} pages
+                                    </small>
+                                </p>
+                            </div>
+                            ${progressBar}
+                            <div class="card-actions">
+                                ${actionButtons}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            container.append(card);
+        });
+    }
+
+    function reprocessDocument(docId) {
+        if (!confirm('Are you sure you want to reprocess this document?')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/api/documents/${docId}/reprocess/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function() {
+                loadDocuments();
+            },
+            error: function(xhr) {
+                alert('Failed to reprocess document: ' + (xhr.responseJSON?.message || 'Unknown error'));
+            }
+        });
+    }
+
+    function cancelProcessing(docId) {
+        if (!confirm('Are you sure you want to cancel processing this document?')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/api/documents/${docId}/cancel/`,
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function() {
+                loadDocuments();
+            },
+            error: function(xhr) {
+                alert('Failed to cancel: ' + (xhr.responseJSON?.message || 'Unknown error'));
+            }
+        });
+    }
+
+    function deleteDocument(docId) {
+        if (!confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
+            return;
+        }
+
+        $.ajax({
+            url: `/api/documents/${docId}/`,
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            success: function() {
+                loadDocuments();
+            },
+            error: function(xhr) {
+                alert('Failed to delete: ' + (xhr.responseJSON?.message || 'Unknown error'));
+            }
+        });
+    }
+
+    function formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}
