@@ -1,64 +1,66 @@
-# Document AI System
+<div align="center">
 
-A comprehensive document processing system that uses a hosted large language model API to extract content from any document (PDF, images, scanned papers), with support for Bangla and English and for structured, semi-structured, and unstructured formats.
+# 🤖 Document AI System
 
-**Developed by Md. Ryhan Uddin**
+### *Intelligent Document Processing with AI-Powered Content Extraction*
 
----
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
+[![Django](https://img.shields.io/badge/Django-5.x-green.svg)](https://www.djangoproject.com/)
+[![DRF](https://img.shields.io/badge/DRF-red.svg)](https://www.django-rest-framework.org/)
 
-## Table of Contents
+A comprehensive document processing system that uses hosted large language model APIs to extract content from **any document** (PDF, images, scanned papers), with support for **Bangla**  and **English**, handling structured, semi-structured, and unstructured formats.
 
-- [Features](#features)
-- [Demo Videos](#demo-videos)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [REST API](#rest-api)
-- [Configuration](#configuration)
-- [Project Structure](#project-structure)
-- [Features in Detail](#features-in-detail)
-- [Database Schema](#database-schema)
-- [Development](#development)
-- [Troubleshooting](#troubleshooting)
-- [Recent Fixes](#recent-fixes)
-- [Deployment](#deployment)
-- [Support](#support)
+**Developed with ❤️ by [Md. Ryhan Uddin](https://github.com/md-ryhan-uddin)**
+
+[✨ Features](#-features) • [🎥 Demo](#-demo-videos) • [🛠️ Tech Stack](#️-tech-stack) • [🚀 Quick Start](#-quick-start) • [📦 Installation](#-installation) • [💻 Usage](#-usage) • [🔌 REST API](#-rest-api) • [⚙️ Configuration](#️-configuration) • [📁 Project Structure](#-project-structure) • [🔍 Features Detail](#-features-in-detail) • [💾 Database](#-database-schema) • [👨‍💻 Development](#-development) • [🐛 Troubleshooting](#-troubleshooting) • [🔧 Recent Fixes](#-recent-fixes) • [🚀 Deployment](#-deployment)
+
+</div>
 
 ---
 
-## Features
+## ✨ Features
 
-### Core Capabilities
-- **Multi-format Support**: PDF, JPG, PNG, TIFF, BMP
-- **Automatic Rotation Detection**: Detects and corrects document orientation (0/90/180/270 degrees)
-- **AI-Powered Extraction**: Uses a hosted large language model API with structured JSON schema output (model configured via environment variables)
-- **Multi-language Support**: Bangla, English, and mixed content
-- **Modern Web Interface**: Drag-and-drop upload, document viewer, search functionality
-- **RESTful API**: Full REST API for document upload, processing, and search
-- **Admin Interface**: Django admin for data management
+<table>
+<tr>
+<td width="50%">
 
-### Advanced Content Extraction
-- Paragraphs, headings, lists
-- Tables with nested columns (unlimited depth)
-- Forms with field detection
-- Handwriting recognition
-- Signatures and images
-- Nested Table Normalization: Handles complex tables with sub-columns at any depth
+### 🎯 Core Capabilities
+- 📄 **Multi-format Support**: PDF, JPG, PNG, TIFF, BMP etc.
+- 🔄 **Auto Rotation Detection**: Smart orientation correction
+- 🤖 **AI-Powered Extraction**: Hosted LLM with JSON schema
+- 🌐 **Multi-language**: Bangla & English support
+- 🎨 **Modern Web UI**: Drag-and-drop interface
+- 🔌 **RESTful API**: Complete REST API integration
+- ⚙️ **Admin Dashboard**: Django admin panel
 
-### UI Features
-- Responsive card-based document display
-- Real-time processing progress with percentage
-- Sticky header with scroll animations
-- Scroll-to-top button
-- Document search, filter, and sort
-- Download blocks in multiple formats (TXT, CSV, XLSX, PDF)
-- Time and date display for uploads
-- Status badges with processing animations
+</td>
+<td width="50%">
+
+### 🚀 Advanced Features
+- 📝 **Smart Extraction**: Paragraphs, headings, lists
+- 📊 **Table Processing**: Nested columns, unlimited depth
+- 📋 **Form Detection**: Automatic field identification
+- ✍️ **Handwriting Recognition**: OCR capabilities
+- 🖊️ **Signature Detection**: Extract signatures & images
+- 📈 **Real-time Progress**: Live processing updates
+- 💾 **Multiple Exports**: TXT, CSV, XLSX, PDF formats
+
+</td>
+</tr>
+</table>
+
+### 💡 UI Highlights
+- ✅ Responsive card-based document display with smooth animations
+- 📊 Real-time processing progress with percentage indicators
+- 🎯 Sticky header with scroll animations for better navigation
+- ⬆️ Scroll-to-top button for quick access
+- 🔍 Advanced search, filter, and sort capabilities
+- 🎨 Status badges with processing animations
+- ⏰ Timestamp display for uploads and processing
 
 ---
 
-## Demo Videos
+## 🎥 Demo Videos
 
 <table>
 <tr>
@@ -77,65 +79,128 @@ A comprehensive document processing system that uses a hosted large language mod
 </tr>
 </table>
 
-> 🎥 **[Watch Full Demo Video](./demo/full_demo_video.mp4)** - Complete end-to-end system demonstration
+<div align="center">
+
+### Watch the System in Action
+
+[![Full Demo](https://img.shields.io/badge/▶️_Watch_Full_Demo-Complete_Walkthrough-red?style=for-the-badge)](./demo/full_demo_video.mp4)
+
+*Complete end-to-end system demonstration*
+
+</div>
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-- **Backend**: Django 5.x + Django REST Framework
-- **Frontend**: Django Templates + Bootstrap 5 + jQuery + Font Awesome
-- **AI**: Hosted large language model (configured via environment variables) with structured JSON output  
-- **Document Processing**: PyMuPDF (fitz), Pillow, OpenCV
-- **Image Processing**: Pillow, OpenCV for rotation detection
-- **Export Libraries**: openpyxl (Excel), reportlab (PDF), python-docx (Word)
+<table>
+<tr>
+<td width="33%" align="center">
+
+### Backend
+![Django](https://img.shields.io/badge/Django-092E20?style=for-the-badge&logo=django&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-red?style=for-the-badge&logo=django&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+
+</td>
+<td width="33%" align="center">
+
+### Frontend
+![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
+![jQuery](https://img.shields.io/badge/jQuery-0769AD?style=for-the-badge&logo=jquery&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
+
+</td>
+<td width="33%" align="center">
+
+### AI & Processing
+![OCR](https://img.shields.io/badge/OCR-blueviolet?style=for-the-badge)
+![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?style=for-the-badge&logo=opencv&logoColor=white)
+![Pillow](https://img.shields.io/badge/Pillow-FFD43B?style=for-the-badge&logo=python&logoColor=blue)
+
+</td>
+</tr>
+</table>
+
+**Core Technologies:**
+- 🔧 **Backend**: Django 5.x + Django REST Framework
+- 🎨 **Frontend**: Django Templates + Bootstrap 5 + jQuery + Font Awesome  
+- 🤖 **AI**: Hosted LLM API with structured JSON output (configurable via environment)
+- 📄 **Document Processing**: PyMuPDF (fitz), Pillow, OpenCV
+- 📊 **Export**: openpyxl (Excel), reportlab (PDF), python-docx (Word)
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-### Prerequisites Check
+### ⚡ Prerequisites
 
 Before starting, ensure you have:
-- ✓ Hosted LLM API key (add to `.env` per `.env.example`; model selection is configured via environment variables)
-- ✓ pip package manager
+- ✅ Python 3.9 or higher
+- ✅ pip package manager
+- ✅ Hosted LLM API key
 
-### 5-Minute Setup
+### 📦 5-Minute Setup
 
 ```bash
-# 1. Navigate to project directory
-cd document_ai_system
+# 1️⃣ Clone the repository
+git clone https://github.com/md-ryhan-uddin/document_extraction_ai_system.git
+cd document_extraction_ai_system
 
-# 2. Create and activate virtual environment (optional but recommended)
+# 2️⃣ Create and activate virtual environment
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 
-# 3. Install dependencies
+# 3️⃣ Install dependencies
 pip install -r requirements.txt
 
-# 4. Configure environment
+# 4️⃣ Configure environment
 cp .env.example .env
-# Edit .env and add your AI API key
+# Edit .env and add your API key
 
-# 5. Run migrations
-python manage.py makemigrations
+# 5️⃣ Setup database
 python manage.py migrate
 
-# 6. Create superuser (optional)
+# 6️⃣ Create admin user (optional)
 python manage.py createsuperuser
 
-# 7. Start server
+# 7️⃣ Launch the server
 python manage.py runserver
 ```
 
-The application will be available at: `http://127.0.0.1:8000/`
+<div align="center">
 
-### First Steps
+🎉 **Success!** Your app is running at [`http://127.0.0.1:8000/`](http://127.0.0.1:8000/)
 
-1. **Home Page** - Upload your first document
-   - Go to http://127.0.0.1:8000/
-   - Drag and drop a PDF or image file
-   - Wait for processing (you'll see status updates with percentage)
+</div>
+
+### 🎯 First Steps
+
+<table>
+<tr>
+<td width="33%" align="center">
+
+**1️⃣ Upload**
+📤 Visit the home page<br/>
+Drag & drop your document
+
+</td>
+<td width="33%" align="center">
+
+**2️⃣ Process**
+⚙️ Watch real-time progress<br/>
+AI extracts content automatically
+
+</td>
+<td width="33%" align="center">
+
+**3️⃣ View**
+👁️ Browse extracted content<br/>
+Download in multiple formats
+
+</td>
+</tr>
+</table>
 
 2. **View Extracted Content**
    - Click "View" on a completed document
@@ -156,12 +221,18 @@ The application will be available at: `http://127.0.0.1:8000/`
 
 ---
 
-## Installation
+## 📦 Installation
+
+<details>
+<summary><b>📖 Click to expand detailed installation guide</b></summary>
+
+<br/>
 
 ### Step 1: Clone the Repository
 
 ```bash
-cd document_ai_system
+git clone https://github.com/md-ryhan-uddin/document_extraction_ai_system.git
+cd document_extraction_ai_system
 ```
 
 ### Step 2: Create Virtual Environment
@@ -230,6 +301,8 @@ Follow the prompts to create an admin account.
 ```bash
 python manage.py runserver
 ```
+
+</details>
 
 The application will be available at: `http://127.0.0.1:8000/`
 
@@ -383,7 +456,12 @@ curl "http://127.0.0.1:8000/api/documents/search/?q=your_search_term"
 
 ---
 
-## Configuration
+## ⚙️ Configuration
+
+<details>
+<summary><b>🔧 Click to view configuration options</b></summary>
+
+<br/>
 
 ### Environment Variables
 
@@ -404,9 +482,16 @@ curl "http://127.0.0.1:8000/api/documents/search/?q=your_search_term"
 4. **Confidence Retry**: Automatically retries at higher DPI if confidence is low
 5. **Default Structure**: Every block has `table_data` and `form_data` fields (empty if not applicable)
 
+</details>
+
 ---
 
-## Project Structure
+## 📁 Project Structure
+
+<details>
+<summary><b>🗂️ Click to view project structure</b></summary>
+
+<br/>
 
 ```
 document_ai_system/
@@ -439,9 +524,16 @@ document_ai_system/
 └── README.md
 ```
 
+</details>
+
 ---
 
-## Features in Detail
+## 🔍 Features in Detail
+
+<details>
+<summary><b>🏗️ Click to view system architecture details</b></summary>
+
+<br/>
 
 ### System Architecture
 
@@ -519,9 +611,16 @@ Represented as:
 - Custom styling
 - Proper pagination
 
+</details>
+
 ---
 
-## Database Schema
+## 💾 Database Schema
+
+<details>
+<summary><b>🗄️ Click to view database models</b></summary>
+
+<br/>
 
 ### Core Models
 
@@ -559,9 +658,16 @@ Tables support unlimited nesting using `column_path`:
 - `[0, 1]` - Second sub-column under first column
 - `[0, 1, 2]` - Third sub-sub-column
 
+</details>
+
 ---
 
-## Development
+## 👨‍💻 Development
+
+<details>
+<summary><b>🛠️ Click to view development guide</b></summary>
+
+<br/>
 
 ### Running Tests
 
@@ -636,9 +742,16 @@ The system extracts:
 10. Available via API/UI
 ```
 
+</details>
+
 ---
 
-## Troubleshooting
+## 🐛 Troubleshooting
+
+<details>
+<summary><b>❓ Click to view common issues and solutions</b></summary>
+
+<br/>
 
 ### Common Issues
 
@@ -726,13 +839,30 @@ After setting up, verify:
    - Click download buttons in viewer
    - Files download in correct format
 
+</details>
+
 ---
 
-## Recent Fixes
+## 🔧 Recent Fixes
+
+<details>
+<summary><b>🆕 Click to view recent bug fixes and improvements</b></summary>
+
+<br/>
 
 ### Critical Bugs Fixed
 
-#### 1. Download URL Mismatch
+#### 1. FOREIGN KEY Constraint Errors
+**Problem:** Database crashes when documents deleted during processing
+
+**Fix:** Added comprehensive error handling with `refresh_from_db()` checks and `IntegrityError` catching at all database operation points
+
+#### 2. Cancel Button Functionality
+**Problem:** Cancel button didn't stop processing immediately
+
+**Fix:** Updated cancel endpoint to immediately mark document as cancelled and added checkpoint detection for external cancellation
+
+#### 3. Download URL Mismatch
 **Problem:** Frontend calling `/download-original/` but backend creating `/download_original/`
 
 **Fix:** Added `url_path` parameters to @action decorators in views.py
@@ -742,7 +872,7 @@ After setting up, verify:
 @action(detail=True, methods=['get'], url_path='export')
 ```
 
-#### 2. Table Formatting in Downloads
+#### 4. Table Formatting in Downloads
 **Problem:** Tables downloading as plain text instead of structured format
 
 **Fix:** Redesigned all export formats to preserve table structure
@@ -751,14 +881,14 @@ After setting up, verify:
 - XLSX: Styled headers with colors and borders
 - PDF: Professional tables with alternating colors
 
-#### 3. AI Schema Validation
+#### 5. AI Schema Validation
 **Problem:** Missing required fields in JSON schema
 
 **Fixes:**
 - Table cells: Added `rowspan` and `colspan` to required fields
 - Form fields: Added `field_label` to required fields
 
-#### 4. RGBA Image Format Error
+#### 6. RGBA Image Format Error
 **Problem:** PNG images with transparency cannot be saved as JPEG
 
 **Fix:** Automatic conversion from RGBA to RGB with white background
@@ -769,7 +899,7 @@ if corrected_image.mode == 'RGBA':
     corrected_image = rgb_image
 ```
 
-#### 5. DRF Format Suffix Conflicts
+</details>
 **Problem:** Query parameter `format` conflicting with DRF's format suffix
 
 **Fix:** Changed to `export_format` parameter
@@ -787,7 +917,12 @@ Recent fixes applied to:
 
 ---
 
-## Deployment
+## 🚀 Deployment
+
+<details>
+<summary><b>☁️ Click to view deployment guide</b></summary>
+
+<br/>
 
 ### Performance Optimization
 
@@ -872,6 +1007,8 @@ server {
 - [ ] Implement rate limiting
 - [ ] Configure CORS if needed
 
+</details>
+
 ---
 
 ## Future Enhancements
@@ -892,63 +1029,24 @@ Potential improvements:
 
 ---
 
-## Support
+<div align="center">
 
-### Documentation Resources
+### 💫 Project Status
 
-- Django documentation: https://docs.djangoproject.com/
-- DRF documentation: https://www.django-rest-framework.org/
-- Bootstrap 5: https://getbootstrap.com/docs/5.0/
-- Font Awesome: https://fontawesome.com/
-
-### Getting Help
-
-If you encounter issues:
-1. Check the console/terminal for error messages
-2. Review the `.env` configuration
-3. Verify all dependencies are installed
-4. Check the Django logs for details
-5. View extraction logs in admin: http://127.0.0.1:8000/admin/documents/extractionlog/
-
-### Expected Behavior
-
-#### Successful Processing
-```
-Terminal Output:
-[timestamp] Extraction completed in 12.34s
-[timestamp] Tokens used: 1234
-[timestamp] Document processed successfully in 15.67s
-```
-
-#### Document Status Flow
-1. **Upload** → Status: "uploaded"
-2. **Processing starts** → Status: "processing"
-3. **Pages extracted** → Each page saved as JPEG
-4. **Rotation detected** → Automatic correction applied
-5. **AI extraction** → Content extracted
-6. **Content stored** → Blocks, tables, forms saved
-7. **Completed** → Status: "completed"
+![Status](https://img.shields.io/badge/Status-✓_Production_Ready-success?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
+![Updated](https://img.shields.io/badge/Updated-November_2025-orange?style=for-the-badge)
 
 ---
 
-## Acknowledgments
+### 🌟 If you find this project helpful, please give it a star!
 
-- **Developer**: Md. Ryhan Uddin
-- **Technologies**:
-  - Django and Django REST Framework communities
-  - PyMuPDF, Pillow, and OpenCV projects
-  - Bootstrap and Font Awesome for UI components
+**Developed with ❤️ by [Md. Ryhan Uddin](https://github.com/md-ryhan-uddin)**
+
+[![GitHub](https://img.shields.io/badge/GitHub-md--ryhan--uddin-181717?style=for-the-badge&logo=github)](https://github.com/md-ryhan-uddin)
 
 ---
 
-## License
+*Happy Document Processing! 📄✨*
 
-This is a demo project for educational purposes.
-
----
-
-**Status:** ✓ All features implemented and tested
-**Version:** 1.0.0
-**Last Updated:** 2025-11-02
-
-Happy document processing!
+</div>
