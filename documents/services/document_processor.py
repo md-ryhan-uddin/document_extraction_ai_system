@@ -12,6 +12,7 @@ import fitz  # PyMuPDF
 from django.conf import settings
 from django.core.files.base import ContentFile
 from django.utils import timezone
+from django.db.utils import IntegrityError
 
 from ..models import Document, Page, ContentBlock, TableCell, FormField, ExtractionLog
 from .rotation_detector import RotationDetector
@@ -52,9 +53,16 @@ class DocumentProcessor:
             # Clear any previous cancellation flags
             cancellation_manager.clear_cancellation(document.id)
 
-            # Update status
+            # Update status to processing
             document.status = 'processing'
             document.save()
+
+            # Immediately check if document was cancelled externally (e.g., via API)
+            # Refresh from DB to get latest status
+            document.refresh_from_db()
+            if document.status == 'cancelled':
+                print(f"[CHECKPOINT 0] Document was cancelled externally! Stopping...")
+                raise InterruptedError("Processing cancelled by user")
 
             # Check for cancellation before starting
             print(f"[CHECKPOINT 1] Checking cancellation for doc {document.id}: {cancellation_manager.is_cancelled(document.id)}")
@@ -101,10 +109,21 @@ class DocumentProcessor:
             print(f"   Time before cancel: {time.time() - start_time:.2f}s")
             print(f"{'='*80}\n")
             logger.info(f"Document processing cancelled: {str(e)}")
-            document.status = 'cancelled'
-            document.error_message = str(e)
-            document.processing_time = time.time() - start_time
-            document.save()
+            
+            # Check if document still exists before saving
+            try:
+                document.refresh_from_db()
+                # Only update if not already cancelled (could have been cancelled by API)
+                if document.status != 'cancelled':
+                    document.status = 'cancelled'
+                    document.error_message = str(e)
+                    document.processing_time = time.time() - start_time
+                    document.save()
+                else:
+                    logger.info(f"Document {document.id} was already marked as cancelled")
+            except Document.DoesNotExist:
+                logger.info(f"Document {document.id} was deleted during processing")
+            
             cancellation_manager.clear_cancellation(document.id)
             return False
         except Exception as e:
@@ -114,10 +133,17 @@ class DocumentProcessor:
             print(f"   Time before failure: {time.time() - start_time:.2f}s")
             print(f"{'='*80}\n")
             logger.error(f"Document processing failed: {str(e)}", exc_info=True)
-            document.status = 'failed'
-            document.error_message = str(e)
-            document.processing_time = time.time() - start_time
-            document.save()
+            
+            # Check if document still exists before saving
+            try:
+                document.refresh_from_db()
+                document.status = 'failed'
+                document.error_message = str(e)
+                document.processing_time = time.time() - start_time
+                document.save()
+            except Document.DoesNotExist:
+                logger.info(f"Document {document.id} was deleted during processing")
+            
             cancellation_manager.clear_cancellation(document.id)
             return False
 
@@ -132,7 +158,10 @@ class DocumentProcessor:
             for page_num in range(len(pdf_document)):
                 # Check for cancellation between pages
                 print(f"[CHECKPOINT 2] Page {page_num + 1}: Checking cancellation for doc {document.id}: {cancellation_manager.is_cancelled(document.id)}")
-                if cancellation_manager.is_cancelled(document.id):
+                
+                # Refresh document from DB to check if it was cancelled externally
+                document.refresh_from_db()
+                if document.status == 'cancelled' or cancellation_manager.is_cancelled(document.id):
                     print(f"[CHECKPOINT 2] CANCELLATION DETECTED at page {page_num + 1}! Stopping...")
                     logger.info(f"Cancellation detected at page {page_num + 1}")
                     raise InterruptedError("Processing cancelled by user")
@@ -207,7 +236,10 @@ class DocumentProcessor:
 
         # Check for cancellation before processing page
         print(f"[CHECKPOINT 3] Before processing page {page_number}: Checking cancellation for doc {document.id}: {cancellation_manager.is_cancelled(document.id)}")
-        if cancellation_manager.is_cancelled(document.id):
+        
+        # Refresh document from DB to check if it was cancelled externally
+        document.refresh_from_db()
+        if document.status == 'cancelled' or cancellation_manager.is_cancelled(document.id):
             print(f"[CHECKPOINT 3] CANCELLATION DETECTED before processing page {page_number}! Stopping...")
             logger.info(f"Cancellation detected before processing page {page_number}")
             raise InterruptedError("Processing cancelled by user")
@@ -226,16 +258,23 @@ class DocumentProcessor:
         corrected_image, rotation_angle = self.rotation_detector.detect_and_correct(image)
 
         # Step 3: Create page record
-        page = Page.objects.create(
-            document=document,
-            page_number=page_number,
-            width=corrected_image.width,
-            height=corrected_image.height,
-            detected_rotation=rotation_angle,
-            applied_rotation=rotation_angle,
-            dpi=dpi,
-            processed=False
-        )
+        try:
+            # Check if document still exists
+            document.refresh_from_db()
+            
+            page = Page.objects.create(
+                document=document,
+                page_number=page_number,
+                width=corrected_image.width,
+                height=corrected_image.height,
+                detected_rotation=rotation_angle,
+                applied_rotation=rotation_angle,
+                dpi=dpi,
+                processed=False
+            )
+        except (Document.DoesNotExist, IntegrityError) as e:
+            logger.info(f"Could not create page: Document was deleted ({str(e)})")
+            raise InterruptedError("Document was deleted during processing")
 
         # Save original image
         orig_buffer = io.BytesIO()
@@ -269,7 +308,10 @@ class DocumentProcessor:
 
         # Check for cancellation before expensive AI call
         print(f"[CHECKPOINT 4] Before AI call on page {page_number}: Checking cancellation for doc {page.document.id}: {cancellation_manager.is_cancelled(page.document.id)}")
-        if cancellation_manager.is_cancelled(page.document.id):
+        
+        # Refresh document from DB to check if it was cancelled externally
+        page.document.refresh_from_db()
+        if page.document.status == 'cancelled' or cancellation_manager.is_cancelled(page.document.id):
             print(f"[CHECKPOINT 4] CANCELLATION DETECTED before AI call! Stopping...")
             logger.info(f"Cancellation detected before AI extraction on page {page_number}")
             raise InterruptedError("Processing cancelled by user")
@@ -282,11 +324,19 @@ class DocumentProcessor:
         if extraction_result['success']:
             # Step 4: Store extracted content
             logger.debug("Storing extracted content...")
-            self._store_extraction_result(page, extraction_result['data'])
+            try:
+                # Check if document still exists before storing
+                document.refresh_from_db()
+                page.refresh_from_db()
+                
+                self._store_extraction_result(page, extraction_result['data'])
 
-            # Update page
-            page.processed = True
-            page.save()
+                # Update page
+                page.processed = True
+                page.save()
+            except (Document.DoesNotExist, Page.DoesNotExist, IntegrityError) as e:
+                logger.info(f"Could not store extraction result: Document or page was deleted ({str(e)})")
+                raise InterruptedError("Document was deleted during processing")
 
         return page
 
@@ -311,7 +361,10 @@ class DocumentProcessor:
         """
         # Check for cancellation before AI API call (redundant but safe)
         print(f"[CHECKPOINT 4b] Inside _extract_content: Checking cancellation for doc {page.document.id}: {cancellation_manager.is_cancelled(page.document.id)}")
-        if cancellation_manager.is_cancelled(page.document.id):
+        
+        # Refresh document from DB to check if it was cancelled externally
+        page.document.refresh_from_db()
+        if page.document.status == 'cancelled' or cancellation_manager.is_cancelled(page.document.id):
             print(f"[CHECKPOINT 4b] CANCELLATION DETECTED in _extract_content! Stopping...")
             logger.info(f"Cancellation detected in _extract_content")
             return {
@@ -327,7 +380,10 @@ class DocumentProcessor:
 
         # Check for cancellation immediately after AI call (catches cancellations during API call)
         print(f"[CHECKPOINT 5] After AI call returned: Checking cancellation for doc {page.document.id}: {cancellation_manager.is_cancelled(page.document.id)}")
-        if cancellation_manager.is_cancelled(page.document.id):
+        
+        # Refresh document from DB to check if it was cancelled externally
+        page.document.refresh_from_db()
+        if page.document.status == 'cancelled' or cancellation_manager.is_cancelled(page.document.id):
             print(f"[CHECKPOINT 5] CANCELLATION DETECTED after AI call! Stopping...")
             logger.info(f"Cancellation detected after AI extraction")
             return {
@@ -338,18 +394,33 @@ class DocumentProcessor:
                 'retry_count': retry_count
             }
 
-        # Log extraction attempt
-        ExtractionLog.objects.create(
-            document=page.document,
-            page=page,
-            request_data={'dpi': page.dpi, 'retry_count': retry_count},
-            response_data=result.get('data'),
-            success=result['success'],
-            error_message=result.get('error', ''),
-            processing_time=result['processing_time'],
-            tokens_used=result['tokens_used'],
-            retry_count=retry_count
-        )
+        # Log extraction attempt (only if document still exists)
+        try:
+            # Verify document and page still exist
+            page.document.refresh_from_db()
+            page.refresh_from_db()
+            
+            ExtractionLog.objects.create(
+                document=page.document,
+                page=page,
+                request_data={'dpi': page.dpi, 'retry_count': retry_count},
+                response_data=result.get('data'),
+                success=result['success'],
+                error_message=result.get('error', ''),
+                processing_time=result['processing_time'],
+                tokens_used=result['tokens_used'],
+                retry_count=retry_count
+            )
+        except (Document.DoesNotExist, Page.DoesNotExist, IntegrityError) as e:
+            # Document or page was deleted during processing - log and continue
+            logger.info(f"Could not create ExtractionLog: Document or page no longer exists ({str(e)})")
+            return {
+                'success': False,
+                'error': 'Document was deleted during processing',
+                'processing_time': result.get('processing_time', 0.0),
+                'tokens_used': result.get('tokens_used', 0),
+                'retry_count': retry_count
+            }
 
         # Check if we should retry at higher DPI
         if (

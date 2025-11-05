@@ -116,13 +116,13 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
-        """Cancel document processing"""
+        """Cancel document processing immediately"""
         from .services import cancellation_manager
 
         document = self.get_object()
 
         print(f"\n{'='*60}")
-        print(f"CANCEL REQUEST RECEIVED for document {document.id}")
+        print(f"❌ CANCEL REQUEST RECEIVED for document {document.id}")
         print(f"Current status: {document.status}")
         print(f"{'='*60}\n")
 
@@ -135,17 +135,24 @@ class DocumentViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Request cancellation
-        print(f"Requesting cancellation for document {document.id}...")
+        print(f"Requesting immediate cancellation for document {document.id}...")
         cancellation_manager.request_cancellation(document.id)
+
+        # Immediately update document status to cancelled
+        # This will cause IntegrityError in the processing thread, which will be handled gracefully
+        document.status = 'cancelled'
+        document.error_message = 'Processing cancelled by user'
+        document.save()
 
         # Verify it was set
         is_set = cancellation_manager.is_cancelled(document.id)
-        print(f"Cancellation flag set: {is_set}")
+        print(f"✓ Cancellation flag set: {is_set}")
+        print(f"✓ Document status updated to: cancelled")
         print(f"Cancelled docs set: {cancellation_manager._cancelled_docs}\n")
 
         return Response({
-            'status': 'cancelling',
-            'message': 'Cancellation requested. Processing will stop at next checkpoint.'
+            'status': 'cancelled',
+            'message': 'Document processing has been cancelled immediately.'
         })
 
     @action(detail=True, methods=['get'])

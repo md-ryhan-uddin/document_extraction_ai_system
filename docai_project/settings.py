@@ -153,11 +153,11 @@ REST_FRAMEWORK = {
 }
 
 # AI Model Settings
-API_KEY = os.getenv('API_KEY', '')
-MODEL_NAME = os.getenv('MODEL_NAME', 'gpt-4o')
+API_KEY = os.getenv('API_KEY')
+MODEL_NAME = os.getenv('MODEL_NAME')
 
 # Document Processing Settings
-DEFAULT_DPI = int(os.getenv('DEFAULT_DPI', '150'))
+DEFAULT_DPI = int(os.getenv('DEFAULT_DPI', '200'))
 HIGH_DPI = int(os.getenv('HIGH_DPI', '300'))
-LOW_CONFIDENCE_THRESHOLD = float(os.getenv('LOW_CONFIDENCE_THRESHOLD', '0.7'))
+LOW_CONFIDENCE_THRESHOLD = float(os.getenv('LOW_CONFIDENCE_THRESHOLD', '0.6'))
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(50 * 1024 * 1024)))  # 50MB default

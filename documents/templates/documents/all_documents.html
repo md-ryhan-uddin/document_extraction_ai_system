@@ -427,7 +427,7 @@
     }
 
     function cancelProcessing(docId) {
-        if (!confirm('Are you sure you want to cancel processing this document?')) {
+        if (!confirm('Are you sure you want to cancel processing this document? The document will be marked as cancelled and can be retried later.')) {
             return;
         }
 
@@ -437,7 +437,9 @@
             headers: {
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            success: function() {
+            success: function(response) {
+                console.log('Cancel response:', response);
+                // Immediately reload to show cancelled status
                 loadDocuments();
             },
             error: function(xhr) {
