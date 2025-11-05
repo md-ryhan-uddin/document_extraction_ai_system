@@ -9,6 +9,7 @@ A comprehensive document processing system that uses a hosted large language mod
 ## Table of Contents
 
 - [Features](#features)
+- [Demo Videos](#demo-videos)
 - [Tech Stack](#tech-stack)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
@@ -54,6 +55,29 @@ A comprehensive document processing system that uses a hosted large language mod
 - Download blocks in multiple formats (TXT, CSV, XLSX, PDF)
 - Time and date display for uploads
 - Status badges with processing animations
+
+---
+
+## Demo Videos
+
+<table>
+<tr>
+<td width="50%">
+
+### 📤 Document Upload Process
+![Upload Demo](./demo/upload.gif)
+
+</td>
+<td width="50%">
+
+### ✅ Content Extraction Results
+![Extraction Demo](./demo/extracted.gif)
+
+</td>
+</tr>
+</table>
+
+> 🎥 **[Watch Full Demo Video](./demo/full_demo_video.mp4)** - Complete end-to-end system demonstration
 
 ---
 
