@@ -17,8 +17,13 @@ openai
 python-dotenv
 # python-magic-bin  # For file type detection on Windows
 
+# Production Server
+gunicorn  # WSGI HTTP Server for production
+whitenoise  # Static file serving
+
 # Database
 psycopg2-binary  # Optional for PostgreSQL
+dj-database-url  # Database configuration from URL
 
 # Export Libraries - Excel, PDF, and Word
 openpyxl

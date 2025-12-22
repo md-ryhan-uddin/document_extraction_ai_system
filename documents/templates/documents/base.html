@@ -179,7 +179,7 @@
         <div class="container">
             <a class="navbar-brand" href="{% url 'documents:home' %}">
                 {% load static %}
-                <img src="{% get_media_prefix %}logo/magnetism.jpg" alt="Magnetism Tech" class="company-logo">
+                <img src="{{ MEDIA_URL }}logo/magnetism.jpg" alt="Magnetism Tech" class="company-logo">
                 <div class="brand-text">
                     <span class="brand-title">Document AI System</span>
                     <span class="brand-subtitle">Magnetism Tech Limited - AI ML Team</span>
@@ -232,7 +232,10 @@
         <div class="container">
             <p class="mb-1">&copy; 2025 Magnetism Tech Limited. All rights reserved.</p>
             <p class="mb-0 text-muted" style="font-size: 0.85rem;">
-                <i class="fas fa-code me-1"></i>Developed by <strong>Md. Ryhan Uddin</strong>
+                <i class="fas fa-code me-1"></i>Developed by <strong><a href="https://github.com/md-ryhan-uddin" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">Md. Ryhan Uddin</a></strong>
+                <a href="https://github.com/md-ryhan-uddin" target="_blank" rel="noopener noreferrer" class="ms-2" style="color: #6c757d; transition: color 0.2s;">
+                    <i class="fab fa-github" style="font-size: 1.1rem;"></i>
+                </a>
             </p>
         </div>
     </footer>

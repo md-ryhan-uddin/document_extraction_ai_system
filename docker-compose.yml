@@ -1,0 +1,81 @@
+services:
+  # PostgreSQL Database (using port 5435 to avoid conflicts)
+  db:
+    image: postgres:15-alpine
+    container_name: docai_postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-docai_db}
+      POSTGRES_USER: ${POSTGRES_USER:-docai_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docai_password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5435:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-docai_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - docai_network
+
+  # Redis Cache (using port 6382 to avoid conflicts)
+  redis:
+    image: redis:7-alpine
+    container_name: docai_redis
+    ports:
+      - "6382:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - docai_network
+
+  # Django Web Application
+  web:
+    build: .
+    container_name: docai_web
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8002"
+    volumes:
+      - .:/app
+      - ./media:/app/media  # Bind mount local media files
+      - static_data:/app/staticfiles
+    ports:
+      - "8002:8002"
+    environment:
+      - DEBUG=${DEBUG:-True}
+      - SECRET_KEY=${SECRET_KEY:-django-insecure-development-key-change-in-production}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-docai_user}:${POSTGRES_PASSWORD:-docai_password}@db:5432/${POSTGRES_DB:-docai_db}
+      - REDIS_URL=redis://redis:6379/0
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MODEL_NAME=${MODEL_NAME:-gpt-4o-mini}
+      - DEFAULT_DPI=${DEFAULT_DPI:-200}
+      - HIGH_DPI=${HIGH_DPI:-300}
+      - ALLOWED_HOSTS=${ALLOWED_HOSTS:-localhost,127.0.0.1}
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - docai_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  static_data:
+    driver: local
+
+networks:
+  docai_network:
+    driver: bridge
