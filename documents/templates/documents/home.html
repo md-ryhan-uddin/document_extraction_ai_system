@@ -121,6 +121,122 @@
         100% { background-position: -200% 0; }
     }
 
+    /* Toast Notification Styles */
+    .toast-container {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+    }
+
+    .toast-notification {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        margin-bottom: 10px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        animation: slideInRight 0.3s ease-out;
+        border-left: 4px solid;
+    }
+
+    .toast-notification.toast-error {
+        border-left-color: #dc3545;
+    }
+
+    .toast-notification.toast-warning {
+        border-left-color: #ffc107;
+    }
+
+    .toast-notification.toast-success {
+        border-left-color: #28a745;
+    }
+
+    .toast-notification.toast-info {
+        border-left-color: #17a2b8;
+    }
+
+    .toast-notification .toast-icon {
+        font-size: 24px;
+        flex-shrink: 0;
+    }
+
+    .toast-notification.toast-error .toast-icon {
+        color: #dc3545;
+    }
+
+    .toast-notification.toast-warning .toast-icon {
+        color: #ffc107;
+    }
+
+    .toast-notification.toast-success .toast-icon {
+        color: #28a745;
+    }
+
+    .toast-notification.toast-info .toast-icon {
+        color: #17a2b8;
+    }
+
+    .toast-notification .toast-content {
+        flex: 1;
+    }
+
+    .toast-notification .toast-title {
+        font-weight: 600;
+        margin-bottom: 4px;
+        font-size: 14px;
+    }
+
+    .toast-notification .toast-message {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+    }
+
+    .toast-notification .toast-close {
+        background: none;
+        border: none;
+        color: #999;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 0;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .toast-notification .toast-close:hover {
+        color: #333;
+    }
+
+    @keyframes slideInRight {
+        from {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+    }
+
+    .toast-notification.hiding {
+        animation: slideOutRight 0.3s ease-out forwards;
+    }
+
     .processing-progress-text {
         font-size: 0.75rem;
         color: #666;
@@ -227,6 +343,9 @@
 {% endblock %}
 
 {% block content %}
+<!-- Toast Notification Container -->
+<div id="toast-container" class="toast-container"></div>
+
 <div class="row">
     <div class="col-12">
         <h3 class="mb-3">
@@ -324,8 +443,13 @@
 
 {% block extra_js %}
 <script>
+    // Rate limit settings from backend
+    const UPLOAD_RATE_PER_HOUR = {{ UPLOAD_RATE_PER_HOUR|default:5 }};
+    const MAX_FILE_SIZE_MB = {{ MAX_FILE_SIZE_MB|default:10 }};
+
     let allDocuments = [];
     let selectedFile = null;
+    let selectedFiles = null; // For multiple file uploads
     let pdfDoc = null;
     let currentPageNum = 1;
     let totalPagesNum = 0;
@@ -377,30 +501,100 @@
             showPreview(files[0]);
         }
 
-        // For multiple files, upload directly
+        // For multiple files, store them and show warning with Process button
         if (files.length > 1) {
-            $('#upload-progress').show();
-            let uploadedCount = 0;
+            selectedFiles = files;
 
-            Array.from(files).forEach((file, index) => {
-                uploadFile(file).then(() => {
-                    uploadedCount++;
-                    const progress = (uploadedCount / files.length) * 100;
-                    $('#progress-bar').css('width', progress + '%');
+            // Show warning toast if files exceed rate limit
+            if (files.length > UPLOAD_RATE_PER_HOUR) {
+                const toastMessage = `You selected ${files.length} files. Due to rate limit (${UPLOAD_RATE_PER_HOUR}/hour), only the first ${UPLOAD_RATE_PER_HOUR} files will be processed. Remaining ${files.length - UPLOAD_RATE_PER_HOUR} will be skipped.`;
+                showToast('Rate Limit Warning', toastMessage, 'warning', 8000);
+            } else {
+                showToast('Multiple Files Selected', `${files.length} files selected. Click "Process Now" to upload all.`, 'info', 5000);
+            }
+        } else {
+            // Single file - clear multiple files
+            selectedFiles = null;
+        }
+        // For both single and multiple files, wait for user to click Process button
+    }
 
-                    if (uploadedCount === files.length) {
-                        setTimeout(() => {
-                            $('#upload-progress').hide();
-                            $('#progress-bar').css('width', '0%');
-                            loadDocuments();
-                            clearPreview();
-                            alert('All documents uploaded successfully!');
-                        }, 1000);
+    function uploadMultipleFiles(files) {
+        $('#upload-progress').show();
+        let uploadedCount = 0;
+        let failedCount = 0;
+        let skippedCount = 0;
+        const totalFiles = files.length;
+
+        const fileArray = Array.from(files);
+        let currentIndex = 0;
+
+        function uploadNext() {
+            if (currentIndex >= totalFiles) {
+                // All done
+                setTimeout(() => {
+                    $('#upload-progress').hide();
+                    $('#progress-bar').css('width', '0%');
+                    $('#process-btn').prop('disabled', false).html('<i class="fas fa-play me-1"></i>Process Now');
+                    loadDocuments();
+                    clearPreview();
+
+                    // Show summary
+                    let summaryTitle = 'Upload Complete';
+                    let summaryMessage = `Successfully uploaded: ${uploadedCount}`;
+                    let summaryType = 'success';
+
+                    if (failedCount > 0) {
+                        summaryMessage += `\nFailed: ${failedCount}`;
+                        summaryType = 'warning';
                     }
-                });
+                    if (skippedCount > 0) {
+                        summaryMessage += `\nSkipped (rate limit): ${skippedCount}`;
+                        summaryType = 'warning';
+                    }
+
+                    showToast(summaryTitle, summaryMessage, summaryType, 8000);
+                }, 500);
+                return;
+            }
+
+            const file = fileArray[currentIndex];
+            currentIndex++;
+
+            uploadFile(file).then(() => {
+                uploadedCount++;
+                const progress = (currentIndex / totalFiles) * 100;
+                $('#progress-bar').css('width', progress + '%');
+                uploadNext();
+            }).catch((xhr) => {
+                if (xhr.status === 429) {
+                    // Rate limited - skip remaining files
+                    skippedCount = totalFiles - currentIndex + 1;
+
+                    // Show rate limit warning
+                    let errorMessage = 'Rate limit reached. ';
+                    if (xhr.responseJSON && xhr.responseJSON.detail) {
+                        errorMessage = xhr.responseJSON.detail + ' ';
+                    }
+                    errorMessage += `Remaining ${skippedCount} file${skippedCount > 1 ? 's' : ''} will be skipped.`;
+
+                    showToast('Rate Limit Exceeded', errorMessage, 'warning', 10000);
+
+                    // Mark all remaining as failed and complete
+                    const progress = 100;
+                    $('#progress-bar').css('width', progress + '%');
+                    currentIndex = totalFiles; // Skip to end
+                    uploadNext();
+                } else {
+                    failedCount++;
+                    const progress = (currentIndex / totalFiles) * 100;
+                    $('#progress-bar').css('width', progress + '%');
+                    uploadNext();
+                }
             });
         }
-        // For single file, wait for user to click Process button
+
+        uploadNext();
     }
 
     function uploadFile(file) {
@@ -633,6 +827,50 @@
         return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 
+    // Toast Notification Function
+    function showToast(title, message, type = 'info', duration = 5000) {
+        const container = document.getElementById('toast-container');
+        const toastId = 'toast-' + Date.now();
+
+        const icons = {
+            'error': 'fa-exclamation-circle',
+            'warning': 'fa-exclamation-triangle',
+            'success': 'fa-check-circle',
+            'info': 'fa-info-circle'
+        };
+
+        const toast = document.createElement('div');
+        toast.id = toastId;
+        toast.className = `toast-notification toast-${type}`;
+        toast.innerHTML = `
+            <div class="toast-icon">
+                <i class="fas ${icons[type]}"></i>
+            </div>
+            <div class="toast-content">
+                <div class="toast-title">${title}</div>
+                <p class="toast-message">${message}</p>
+            </div>
+            <button class="toast-close" onclick="closeToast('${toastId}')">&times;</button>
+        `;
+
+        container.appendChild(toast);
+
+        // Auto-remove after duration
+        setTimeout(() => {
+            closeToast(toastId);
+        }, duration);
+    }
+
+    function closeToast(toastId) {
+        const toast = document.getElementById(toastId);
+        if (toast) {
+            toast.classList.add('hiding');
+            setTimeout(() => {
+                toast.remove();
+            }, 300);
+        }
+    }
+
     function getCookie(name) {
         let cookieValue = null;
         if (document.cookie && document.cookie !== '') {
@@ -759,6 +997,7 @@
 
     function clearPreview() {
         selectedFile = null;
+        selectedFiles = null;
         pdfDoc = null;
         $('#process-btn').hide();
         $('#preview-controls').hide();
@@ -771,24 +1010,78 @@
     }
 
     function processSelectedDocument() {
+        // Check if multiple files or single file
+        if (selectedFiles && selectedFiles.length > 1) {
+            // Process multiple files
+            $('#process-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Processing...');
+            uploadMultipleFiles(selectedFiles);
+            return;
+        }
+
         if (!selectedFile) {
-            alert('No file selected');
+            showToast('No File Selected', 'Please select a file to process.', 'warning');
             return;
         }
 
         // Disable button
         $('#process-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>Processing...');
 
-        // Upload file
+        // Upload single file
         uploadFile(selectedFile).then(() => {
             setTimeout(() => {
                 clearPreview();
                 loadDocuments();
-                alert('Document uploaded and processing started!');
+                showToast('Success!', 'Document uploaded and processing started!', 'success');
                 $('#process-btn').prop('disabled', false).html('<i class="fas fa-play me-1"></i>Process Now');
             }, 1000);
-        }).catch(() => {
+        }).catch((xhr) => {
             $('#process-btn').prop('disabled', false).html('<i class="fas fa-play me-1"></i>Process Now');
+
+            // Parse error response
+            let errorTitle = 'Upload Failed';
+            let errorMessage = 'An error occurred while uploading the document.';
+            let errorType = 'error';
+
+            if (xhr.responseJSON) {
+                const response = xhr.responseJSON;
+
+                // Handle rate limiting errors
+                if (xhr.status === 429) {
+                    errorType = 'warning';
+                    errorTitle = response.error || 'Rate Limit Exceeded';
+                    errorMessage = response.detail || 'You have exceeded the upload limit. Please try again later.';
+
+                    if (response.retry_after) {
+                        const seconds = response.retry_after;
+                        const minutes = Math.floor(seconds / 60);
+                        const remainingSeconds = seconds % 60;
+
+                        if (minutes > 0) {
+                            errorMessage += ` Retry after ${minutes} minute${minutes > 1 ? 's' : ''}`;
+                            if (remainingSeconds > 0) {
+                                errorMessage += ` ${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''}`;
+                            }
+                            errorMessage += '.';
+                        } else {
+                            errorMessage += ` Retry after ${seconds} second${seconds > 1 ? 's' : ''}.`;
+                        }
+                    }
+                }
+                // Handle file size errors
+                else if (xhr.status === 413) {
+                    errorType = 'warning';
+                    errorTitle = response.error || 'File Too Large';
+                    errorMessage = response.detail || 'The file you are trying to upload is too large.';
+                }
+                // Handle other errors
+                else {
+                    errorMessage = response.detail || response.error || errorMessage;
+                }
+            } else if (xhr.status === 0) {
+                errorMessage = 'Network error. Please check your connection and try again.';
+            }
+
+            showToast(errorTitle, errorMessage, errorType, 10000);
         });
     }
 

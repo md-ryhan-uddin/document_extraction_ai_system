@@ -21,6 +21,10 @@ python-dotenv
 gunicorn  # WSGI HTTP Server for production
 whitenoise  # Static file serving
 
+# Rate Limiting & Security
+django-ratelimit  # Rate limiting for views
+django-axes  # Brute force protection
+
 # Database
 psycopg2-binary  # Optional for PostgreSQL
 dj-database-url  # Database configuration from URL

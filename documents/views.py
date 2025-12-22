@@ -3,7 +3,10 @@ REST API Views for document processing.
 """
 from django.shortcuts import render, get_object_or_404
 from django.db.models import Q
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
+from django.core.cache import cache
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -12,6 +15,7 @@ import threading
 import logging
 import json
 import csv
+import time
 from io import StringIO, BytesIO
 
 from .models import Document, Page, ContentBlock, ExtractionLog
@@ -894,7 +898,12 @@ class ExtractionLogViewSet(viewsets.ReadOnlyModelViewSet):
 # Frontend views
 def home(request):
     """Home page with upload interface"""
-    return render(request, 'documents/home.html')
+    from django.conf import settings
+    context = {
+        'UPLOAD_RATE_PER_HOUR': settings.UPLOAD_RATE_PER_HOUR,
+        'MAX_FILE_SIZE_MB': settings.MAX_FILE_SIZE_MB,
+    }
+    return render(request, 'documents/home.html', context)
 
 
 def all_documents(request):

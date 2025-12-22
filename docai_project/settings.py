@@ -59,6 +59,9 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    # Custom middleware for rate limiting (production)
+    'documents.middleware.DocumentProcessingLimitMiddleware',
+    'documents.middleware.FileSizeLimitMiddleware',
 ]
 
 ROOT_URLCONF = 'docai_project.urls'
@@ -172,6 +175,13 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
     ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'documents.throttling.DocumentUploadThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'document_upload': os.getenv('UPLOAD_RATE_PER_HOUR', '10') + '/hour',
+        'anon': os.getenv('UPLOAD_RATE_PER_HOUR', '10') + '/hour',
+    }
 }
 
 # AI Model Settings
@@ -183,3 +193,19 @@ DEFAULT_DPI = int(os.getenv('DEFAULT_DPI', '200'))
 HIGH_DPI = int(os.getenv('HIGH_DPI', '300'))
 LOW_CONFIDENCE_THRESHOLD = float(os.getenv('LOW_CONFIDENCE_THRESHOLD', '0.6'))
 MAX_FILE_SIZE = int(os.getenv('MAX_FILE_SIZE', str(50 * 1024 * 1024)))  # 50MB default
+
+# Rate Limiting & Security Settings (Production)
+UPLOAD_RATE_PER_HOUR = int(os.getenv('UPLOAD_RATE_PER_HOUR', '5'))  # Uploads per hour per IP
+UPLOAD_DAILY_LIMIT = int(os.getenv('UPLOAD_DAILY_LIMIT', '10'))  # Uploads per day per IP
+MAX_CONCURRENT_PROCESSING = int(os.getenv('MAX_CONCURRENT_PROCESSING', '3'))  # Concurrent processing per IP
+MAX_FILE_SIZE_MB = int(os.getenv('MAX_FILE_SIZE_MB', '10'))  # Max file size in MB
+PROCESSING_TIMEOUT = int(os.getenv('PROCESSING_TIMEOUT', '300'))  # Processing timeout in seconds
+THROTTLE_WAIT_TIME = int(os.getenv('THROTTLE_WAIT_TIME', '60'))  # Wait time when throttled
+
+# Cache Configuration (for rate limiting)
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if DEBUG else 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1') if not DEBUG else 'unique-snowflake',
+    }
+}
