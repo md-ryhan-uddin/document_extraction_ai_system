@@ -29,6 +29,9 @@ django-axes  # Brute force protection
 psycopg2-binary  # Optional for PostgreSQL
 dj-database-url  # Database configuration from URL
 
+# Cache
+redis  # Redis client for Django cache backend
+
 # Export Libraries - Excel, PDF, and Word
 openpyxl
 reportlab

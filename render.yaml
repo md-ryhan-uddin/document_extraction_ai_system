@@ -1,0 +1,71 @@
+services:
+  # PostgreSQL Database
+  - type: pserv
+    name: docai-db
+    plan: free
+    databaseName: docai_db
+    databaseUser: docai_user
+    region: oregon
+
+  # Redis Cache
+  - type: redis
+    name: docai-redis
+    plan: free
+    region: oregon
+    maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
+
+  # Django Web Application
+  - type: web
+    name: docai-web
+    runtime: docker
+    plan: free
+    region: oregon
+    dockerfilePath: ./Dockerfile.production
+    dockerContext: .
+    healthCheckPath: /
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: DATABASE_URL
+        fromDatabase:
+          name: docai-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: docai-redis
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false  # User must set this manually in Render dashboard
+      - key: MODEL_NAME
+        value: gpt-4o-mini
+      - key: DEFAULT_DPI
+        value: "200"
+      - key: HIGH_DPI
+        value: "300"
+      - key: LOW_CONFIDENCE_THRESHOLD
+        value: "0.6"
+      - key: MAX_FILE_SIZE
+        value: "10485760"
+      # Rate Limiting & Security
+      - key: UPLOAD_RATE_PER_HOUR
+        value: "3"
+      - key: UPLOAD_DAILY_LIMIT
+        value: "10"
+      - key: MAX_CONCURRENT_PROCESSING
+        value: "2"
+      - key: MAX_FILE_SIZE_MB
+        value: "5"
+      - key: PROCESSING_TIMEOUT
+        value: "600"
+      - key: THROTTLE_WAIT_TIME
+        value: "60"
+    disk:
+      name: docai-media
+      mountPath: /app/media
+      sizeGB: 1
