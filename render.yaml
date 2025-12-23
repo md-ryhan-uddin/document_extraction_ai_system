@@ -5,13 +5,13 @@ services:
     plan: free
     databaseName: docai_db
     databaseUser: docai_user
-    region: oregon
+    region: singapore
 
   # Redis Cache
   - type: redis
     name: docai-redis
     plan: free
-    region: oregon
+    region: singapore
     maxmemoryPolicy: allkeys-lru
     ipAllowList: []
 
@@ -20,10 +20,10 @@ services:
     name: docai-web
     runtime: docker
     plan: free
-    region: oregon
+    region: singapore
     dockerfilePath: ./Dockerfile.production
     dockerContext: .
-    healthCheckPath: /
+    healthCheckPath: /health/
     envVars:
       - key: SECRET_KEY
         generateValue: true

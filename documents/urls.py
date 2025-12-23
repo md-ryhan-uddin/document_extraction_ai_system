@@ -15,6 +15,9 @@ router.register(r'logs', views.ExtractionLogViewSet, basename='extractionlog')
 app_name = 'documents'
 
 urlpatterns = [
+    # Health check
+    path('health/', views.health_check, name='health_check'),
+
     # Frontend views
     path('', views.home, name='home'),
     path('all-documents/', views.all_documents, name='all_documents'),

@@ -896,6 +896,41 @@ class ExtractionLogViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 # Frontend views
+def health_check(request):
+    """Health check endpoint for monitoring"""
+    from django.http import JsonResponse
+    from django.db import connection
+    from django.core.cache import cache
+
+    status = {
+        'status': 'healthy',
+        'database': 'unknown',
+        'cache': 'unknown'
+    }
+
+    # Check database
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT 1")
+        status['database'] = 'connected'
+    except Exception as e:
+        status['status'] = 'unhealthy'
+        status['database'] = f'error: {str(e)}'
+
+    # Check cache
+    try:
+        cache.set('health_check', 'ok', 10)
+        if cache.get('health_check') == 'ok':
+            status['cache'] = 'connected'
+        else:
+            status['cache'] = 'error: cache not working'
+    except Exception as e:
+        status['cache'] = f'error: {str(e)}'
+
+    status_code = 200 if status['status'] == 'healthy' else 503
+    return JsonResponse(status, status=status_code)
+
+
 def home(request):
     """Home page with upload interface"""
     from django.conf import settings
