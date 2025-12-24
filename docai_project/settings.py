@@ -62,6 +62,8 @@ MIDDLEWARE = [
     # Custom middleware for rate limiting (production)
     'documents.middleware.DocumentProcessingLimitMiddleware',
     'documents.middleware.FileSizeLimitMiddleware',
+    # Media file serving in production
+    'documents.media_middleware.MediaFileMiddleware',
 ]
 
 ROOT_URLCONF = 'docai_project.urls'
@@ -155,6 +157,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Media files (User-uploaded content)
+# Served by MediaFileMiddleware in production
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
@@ -203,9 +206,63 @@ PROCESSING_TIMEOUT = int(os.getenv('PROCESSING_TIMEOUT', '300'))  # Processing t
 THROTTLE_WAIT_TIME = int(os.getenv('THROTTLE_WAIT_TIME', '60'))  # Wait time when throttled
 
 # Cache Configuration (for rate limiting)
+# NOTE: Using LocMemCache instead of Redis because:
+# 1. Render free tier doesn't include Redis service
+# 2. Redis would require additional paid add-on ($7/month minimum)
+# 3. LocMemCache is sufficient for basic rate limiting on small scale
+# 4. For production at scale, add Redis via Render dashboard: https://render.com/docs/redis
+#
+# To enable Redis in production:
+# - Add Redis service in render.yaml or Render dashboard
+# - Set REDIS_URL environment variable
+# - Uncomment Redis configuration below
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache' if DEBUG else 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://127.0.0.1:6379/1') if not DEBUG else 'unique-snowflake',
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
     }
+}
+
+# Uncomment for Redis (requires Redis service configured):
+# REDIS_URL = os.getenv('REDIS_URL')
+# if REDIS_URL:
+#     CACHES = {
+#         'default': {
+#             'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+#             'LOCATION': REDIS_URL,
+#         }
+#     }
+
+# Logging Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '[{levelname}] {asctime} {module} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'documents': {
+            'handlers': ['console'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
+        },
+    },
 }

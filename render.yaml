@@ -1,26 +1,10 @@
 services:
-  # PostgreSQL Database
-  - type: pserv
-    name: docai-db
-    plan: free
-    databaseName: docai_db
-    databaseUser: docai_user
-    region: singapore
-
-  # Redis Cache
-  - type: redis
-    name: docai-redis
-    plan: free
-    region: singapore
-    maxmemoryPolicy: allkeys-lru
-    ipAllowList: []
-
-  # Django Web Application
+  # Django Web Application - uses existing vessel-scheduling-db
   - type: web
-    name: docai-web
+    name: doc-ai
     runtime: docker
     plan: free
-    region: singapore
+    region: oregon
     dockerfilePath: ./Dockerfile.production
     dockerContext: .
     healthCheckPath: /health/
@@ -30,18 +14,13 @@ services:
       - key: DEBUG
         value: "False"
       - key: ALLOWED_HOSTS
-        value: .onrender.com
+        value: .onrender.com,localhost,127.0.0.1
       - key: DATABASE_URL
         fromDatabase:
-          name: docai-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: redis
-          name: docai-redis
+          name: vessel-scheduling-db
           property: connectionString
       - key: OPENAI_API_KEY
-        sync: false  # User must set this manually in Render dashboard
+        sync: false  # Set manually in Render dashboard
       - key: MODEL_NAME
         value: gpt-4o-mini
       - key: DEFAULT_DPI
@@ -54,18 +33,16 @@ services:
         value: "10485760"
       # Rate Limiting & Security
       - key: UPLOAD_RATE_PER_HOUR
-        value: "3"
-      - key: UPLOAD_DAILY_LIMIT
         value: "10"
+      - key: UPLOAD_DAILY_LIMIT
+        value: "50"
       - key: MAX_CONCURRENT_PROCESSING
-        value: "2"
+        value: "3"
       - key: MAX_FILE_SIZE_MB
-        value: "5"
+        value: "10"
       - key: PROCESSING_TIMEOUT
         value: "600"
       - key: THROTTLE_WAIT_TIME
         value: "60"
-    disk:
-      name: docai-media
-      mountPath: /app/media
-      sizeGB: 1
+    # Note: Persistent disks not available on free tier
+    # Uploaded files will be lost on restart - use cloud storage (Cloudinary) for production

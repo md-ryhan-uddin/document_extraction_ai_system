@@ -25,31 +25,38 @@ class DocumentProcessingLimitMiddleware:
             # Get user identifier (IP address)
             ip_address = self.get_client_ip(request)
 
-            # Check concurrent processing limit
-            processing_key = f'processing_{ip_address}'
-            concurrent_count = cache.get(processing_key, 0)
+            try:
+                # Check concurrent processing limit
+                processing_key = f'processing_{ip_address}'
+                concurrent_count = cache.get(processing_key, 0)
 
-            if concurrent_count >= self.max_concurrent:
-                return JsonResponse({
-                    'error': 'Too many concurrent uploads',
-                    'detail': f'You can only process {self.max_concurrent} documents at a time. Please wait for current processing to complete.',
-                    'retry_after': 30,
-                    'limit': self.max_concurrent,
-                    'current': concurrent_count
-                }, status=429)
+                if concurrent_count >= self.max_concurrent:
+                    return JsonResponse({
+                        'error': 'Too many concurrent uploads',
+                        'detail': f'You can only process {self.max_concurrent} documents at a time. Please wait for current processing to complete.',
+                        'retry_after': 30,
+                        'limit': self.max_concurrent,
+                        'current': concurrent_count
+                    }, status=429)
 
-            # Check daily upload limit
-            daily_key = f'daily_uploads_{ip_address}_{time.strftime("%Y%m%d")}'
-            daily_count = cache.get(daily_key, 0)
+                # Check daily upload limit
+                daily_key = f'daily_uploads_{ip_address}_{time.strftime("%Y%m%d")}'
+                daily_count = cache.get(daily_key, 0)
 
-            if daily_count >= self.daily_limit:
-                return JsonResponse({
-                    'error': 'Daily limit exceeded',
-                    'detail': f'You have reached the maximum of {self.daily_limit} documents per day. Please try again tomorrow.',
-                    'retry_after': 86400,  # 24 hours
-                    'limit': self.daily_limit,
-                    'used': daily_count
-                }, status=429)
+                if daily_count >= self.daily_limit:
+                    return JsonResponse({
+                        'error': 'Daily limit exceeded',
+                        'detail': f'You have reached the maximum of {self.daily_limit} documents per day. Please try again tomorrow.',
+                        'retry_after': 86400,  # 24 hours
+                        'limit': self.daily_limit,
+                        'used': daily_count
+                    }, status=429)
+            except Exception as e:
+                # Log cache error but don't block the upload
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Cache error in rate limiting middleware: {str(e)}")
+                # Continue with the request even if cache fails
 
         response = self.get_response(request)
         return response

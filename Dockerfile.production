@@ -33,14 +33,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy project files
 COPY . .
 
-# Create necessary directories
-RUN mkdir -p /app/media /app/staticfiles
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/media /app/media/documents /app/media/pages /app/staticfiles && \
+    chmod -R 777 /app/media
 
 # Collect static files
 RUN python manage.py collectstatic --noinput
 
-# Expose port
+# Expose port (Render assigns PORT dynamically)
 EXPOSE 10000
 
-# Use gunicorn for production
-CMD ["gunicorn", "docai_project.wsgi:application", "--bind", "0.0.0.0:10000", "--workers", "2", "--threads", "4", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-"]
+# Start script that runs migrations then starts gunicorn
+CMD ["sh", "-c", "python manage.py migrate --noinput && gunicorn docai_project.wsgi:application --bind 0.0.0.0:${PORT:-10000} --workers 2 --threads 4 --timeout 120 --log-level debug --access-logfile - --error-logfile - --capture-output"]

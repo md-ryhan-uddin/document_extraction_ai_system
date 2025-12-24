@@ -30,10 +30,12 @@ ENV/
 *.log
 db.sqlite3
 db.sqlite3-journal
-/media/
+/media/documents/
+/media/pages/
 /staticfiles/
 .static_storage/
 .media/
+# Keep media/logo/ for production logo files
 
 # Environment variables
 .env

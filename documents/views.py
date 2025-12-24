@@ -7,6 +7,7 @@ from django.http import HttpResponse, FileResponse, JsonResponse
 from django.core.cache import cache
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.conf import settings
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -58,33 +59,42 @@ class DocumentViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *args, **kwargs):
         """Upload and process a document"""
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        document = serializer.save()
+        try:
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            document = serializer.save()
 
-        print(f"\n{'='*80}")
-        print(f"📤 UPLOAD RECEIVED: Document #{document.id} - '{document.title}'")
-        print(f"   File: {document.original_filename}")
-        print(f"   Size: {document.file.size / 1024:.2f} KB")
-        print(f"   Type: {document.file_type}")
-        print(f"   Starting background processing...")
-        print(f"{'='*80}\n")
+            print(f"\n{'='*80}")
+            print(f"📤 UPLOAD RECEIVED: Document #{document.id} - '{document.title}'")
+            print(f"   File: {document.original_filename}")
+            print(f"   Size: {document.file.size / 1024:.2f} KB")
+            print(f"   Type: {document.file_type}")
+            print(f"   File path: {document.file.path if hasattr(document.file, 'path') else 'N/A'}")
+            print(f"   Media root: {settings.MEDIA_ROOT}")
+            print(f"   Starting background processing...")
+            print(f"{'='*80}\n")
 
-        # Start processing in background
-        processor = DocumentProcessor()
-        thread = threading.Thread(
-            target=processor.process_document,
-            args=(document,)
-        )
-        thread.daemon = True
-        thread.start()
+            # Start processing in background
+            processor = DocumentProcessor()
+            thread = threading.Thread(
+                target=processor.process_document,
+                args=(document,)
+            )
+            thread.daemon = True
+            thread.start()
 
-        # Return document info
-        response_serializer = DocumentListSerializer(document)
-        return Response(
-            response_serializer.data,
-            status=status.HTTP_201_CREATED
-        )
+            # Return document info
+            response_serializer = DocumentListSerializer(document)
+            return Response(
+                response_serializer.data,
+                status=status.HTTP_201_CREATED
+            )
+        except Exception as e:
+            logger.error(f"Error creating document: {str(e)}", exc_info=True)
+            return Response(
+                {'error': str(e), 'detail': 'Failed to upload document'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
 
     @action(detail=True, methods=['post'])
     def reprocess(self, request, pk=None):
