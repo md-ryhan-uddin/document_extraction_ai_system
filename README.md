@@ -7,12 +7,16 @@
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Django](https://img.shields.io/badge/Django-5.x-green.svg)](https://www.djangoproject.com/)
 [![DRF](https://img.shields.io/badge/DRF-red.svg)](https://www.django-rest-framework.org/)
+[![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Online-success?logo=render)](https://doc-ai-xg90.onrender.com/)
 
 A comprehensive document processing system that uses hosted large language model APIs to extract content from **any document** (PDF, images, scanned papers), with support for **Bangla**  and **English**, handling structured, semi-structured, and unstructured formats.
 
+### 🌐 [**Try Live Demo →**](https://doc-ai-xg90.onrender.com/)
+
 **Developed with ❤️ by [Md. Ryhan Uddin](https://github.com/md-ryhan-uddin)**
 
-[✨ Features](#-features) • [🎥 Demo](#-demo-videos) • [🛠️ Tech Stack](#️-tech-stack) • [🚀 Quick Start](#-quick-start) • [📦 Installation](#-installation) • [💻 Usage](#-usage) • [🔌 REST API](#-rest-api) • [⚙️ Configuration](#️-configuration) • [📁 Project Structure](#-project-structure) • [🔍 Features Detail](#-features-in-detail) • [💾 Database](#-database-schema) • [👨‍💻 Development](#-development) • [🐛 Troubleshooting](#-troubleshooting) • [🔧 Recent Fixes](#-recent-fixes) • [🚀 Deployment](#-deployment)
+[✨ Features](#-features) • [🎥 Demo](#-demo-videos) • [🛠️ Tech Stack](#️-tech-stack) • [🚀 Quick Start](#-quick-start) • [📦 Installation](#-installation) • [💻 Usage](#-usage) • [🔌 REST API](#-rest-api) • [⚙️ Configuration](#️-configuration) • [📁 Project Structure](#-project-structure) • [🔍 Features Detail](#-features-in-detail) • [💾 Database](#-database-schema) • [👨‍💻 Development](#-development) • [🐛 Troubleshooting](#-troubleshooting) • [🔧 Recent Fixes](#-recent-fixes) • [🐳 Docker](#-docker-deployment)
 
 </div>
 
@@ -133,21 +137,57 @@ A comprehensive document processing system that uses hosted large language model
 
 ## 🚀 Quick Start
 
-### ⚡ Prerequisites
+### 🌐 Try Live Demo First!
 
-Before starting, ensure you have:
-- ✅ Python 3.9 or higher
-- ✅ pip package manager
-- ✅ Hosted LLM API key
+[![Open Live Demo](https://img.shields.io/badge/🚀_Open_Live_Demo-doc--ai--xg90.onrender.com-success?style=for-the-badge)](https://doc-ai-xg90.onrender.com/)
 
-### 📦 5-Minute Setup
+Experience the full system online before installing locally!
+
+---
+
+### 🐳 Run with Docker (Recommended)
+
+**Prerequisites:** Docker and Docker Compose installed ([Get Docker](https://docs.docker.com/get-docker/))
 
 ```bash
 # 1️⃣ Clone the repository
 git clone https://github.com/md-ryhan-uddin/document_extraction_ai_system.git
 cd document_extraction_ai_system
 
-# 2️⃣ Create and activate virtual environment
+# 2️⃣ Configure environment
+cp .env.example .env
+# Edit .env and add your API key: API_KEY=your-openai-api-key
+
+# 3️⃣ Build and run with Docker Compose
+docker-compose up --build
+
+# That's it! 🎉
+```
+
+<div align="center">
+
+🎉 **Success!** Your app is running at [`http://localhost:8000/`](http://localhost:8000/)
+
+**First time?** Create admin user:
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+
+</div>
+
+---
+
+### 🐍 Run without Docker (Alternative)
+
+<details>
+<summary><b>Click to view traditional Python setup</b></summary>
+
+```bash
+# 1️⃣ Clone and navigate
+git clone https://github.com/md-ryhan-uddin/document_extraction_ai_system.git
+cd document_extraction_ai_system
+
+# 2️⃣ Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 
@@ -156,7 +196,7 @@ pip install -r requirements.txt
 
 # 4️⃣ Configure environment
 cp .env.example .env
-# Edit .env and add your API key
+# Edit .env and add: API_KEY=your-openai-api-key
 
 # 5️⃣ Setup database
 python manage.py migrate
@@ -164,15 +204,13 @@ python manage.py migrate
 # 6️⃣ Create admin user (optional)
 python manage.py createsuperuser
 
-# 7️⃣ Launch the server
+# 7️⃣ Run server
 python manage.py runserver
 ```
 
-<div align="center">
+✅ App running at [`http://127.0.0.1:8000/`](http://127.0.0.1:8000/)
 
-🎉 **Success!** Your app is running at [`http://127.0.0.1:8000/`](http://127.0.0.1:8000/)
-
-</div>
+</details>
 
 ### 🎯 First Steps
 
@@ -494,35 +532,82 @@ curl "http://127.0.0.1:8000/api/documents/search/?q=your_search_term"
 <br/>
 
 ```
-document_ai_system/
-├── docai_project/          # Django project settings
-│   ├── settings.py
-│   └── urls.py
-├── documents/              # Main app
-│   ├── models.py          # Database models
-│   ├── views.py           # API views and template views
-│   ├── serializers.py     # DRF serializers
-│   ├── admin.py           # Admin interface
-│   ├── urls.py            # URL routing
-│   ├── services/          # Core services
-│   │   ├── rotation_detector.py
-│   │   ├── ai_extractor.py
-│   │   └── document_processor.py
-│   └── templates/         # HTML templates
-│       └── documents/
-│           ├── base.html
-│           ├── home.html
-│           ├── all_documents.html
-│           └── viewer.html
-├── media/                 # Uploaded files
-│   ├── documents/         # Original files
-│   └── pages/             # Extracted page images
-├── requirements.txt       # Python dependencies
-├── .env.example          # Environment template
-├── .gitignore
-├── manage.py
-└── README.md
+document_extraction_ai_system/
+├── 📁 docai_project/              # Django project configuration
+│   ├── settings.py                # Main settings (database, cache, static files)
+│   ├── urls.py                    # Root URL configuration
+│   ├── wsgi.py                    # WSGI application entry point
+│   └── asgi.py                    # ASGI configuration
+│
+├── 📁 documents/                  # Main Django app
+│   ├── models.py                  # Database models (Document, Page, ContentBlock)
+│   ├── views.py                   # API endpoints & template views
+│   ├── serializers.py             # DRF serializers for REST API
+│   ├── admin.py                   # Django admin configuration
+│   ├── urls.py                    # App URL routing
+│   ├── middleware.py              # Rate limiting & file size middleware
+│   ├── media_middleware.py        # Production media file serving
+│   ├── throttling.py              # API throttling configuration
+│   │
+│   ├── 📁 services/               # Core business logic
+│   │   ├── rotation_detector.py   # Auto rotation detection (OpenCV)
+│   │   ├── ai_extractor.py        # AI model integration (JSON schema)
+│   │   ├── document_processor.py  # Main processing pipeline
+│   │   └── cancellation_manager.py# Processing cancellation handler
+│   │
+│   ├── 📁 templates/documents/    # Frontend HTML templates
+│   │   ├── base.html              # Base template with navigation
+│   │   ├── home.html              # Upload interface
+│   │   ├── all_documents.html     # Document list view
+│   │   └── viewer.html            # Document viewer with content
+│   │
+│   ├── 📁 static/documents/       # Static assets
+│   │   ├── css/                   # Custom stylesheets
+│   │   └── js/                    # Frontend JavaScript
+│   │
+│   └── 📁 migrations/             # Database migrations
+│
+├── 📁 media/                      # User uploaded files (gitignored)
+│   ├── documents/                 # Original uploaded files
+│   ├── pages/                     # Extracted page images
+│   │   └── original/              # Original unrotated pages
+│   └── logo/                      # Logo files for branding
+│
+├── 📁 staticfiles/                # Collected static files (production)
+├── 📁 demo/                       # Demo GIFs and videos
+├── 📁 data/                       # Sample data for testing
+│
+├── 🐳 Dockerfile                  # Development Docker configuration
+├── 🐳 Dockerfile.production       # Production Docker configuration
+├── 🐳 docker-compose.yml          # Docker Compose setup
+├── 📄 render.yaml                 # Render.com deployment config
+├── 📄 start.sh                    # Production startup script
+│
+├── 📄 requirements.txt            # Python dependencies
+├── 📄 .env.example                # Environment variables template
+├── 📄 .dockerignore               # Docker build exclusions
+├── 📄 .gitignore                  # Git exclusions
+│
+├── 🔧 setup.sh                    # Linux/Mac setup script
+├── 🔧 setup.bat                   # Windows setup script
+├── 🔧 manage.py                   # Django management commands
+│
+├── 🧪 test_urls.py                # API testing utility
+├── 🧪 check_schema.py             # Schema validation utility
+├── 🧪 reprocess_failed.py         # Batch reprocessing script
+├── 🧪 force_cancel_all.py         # Cancel all processing documents
+│
+├── 📚 README.md                   # This file
+└── 📊 db.sqlite3                  # SQLite database (development)
 ```
+
+### Key Components
+
+- **documents/services/**: Core processing logic separated from views
+- **middleware.py**: Rate limiting, file size validation
+- **media_middleware.py**: Serves media files in production (Render)
+- **Docker files**: Multi-stage builds for optimized production images
+- **Utility scripts**: Batch processing, testing, troubleshooting tools
 
 </details>
 
@@ -915,12 +1000,263 @@ Recent fixes applied to:
 6. `documents/templates/documents/base.html` - Sticky header, scroll button
 7. `documents/urls.py` - All documents route
 
+</details>
+
 ---
 
-## 🚀 Deployment
+## 🐳 Docker Deployment
 
 <details>
-<summary><b>☁️ Click to view deployment guide</b></summary>
+<summary><b>📦 Click to view comprehensive Docker guide</b></summary>
+
+<br/>
+
+### Why Docker?
+
+✅ **Consistent Environment** - Same setup on any machine  
+✅ **Easy Deployment** - One command to run everything  
+✅ **Isolated Dependencies** - No conflicts with system packages  
+✅ **Production Ready** - Same config for dev and production  
+
+### Prerequisites
+
+- Docker installed ([Get Docker](https://docs.docker.com/get-docker/))
+- Docker Compose installed (included with Docker Desktop)
+
+---
+
+### Development with Docker Compose
+
+Perfect for local development with hot-reload and volume mounts.
+
+**1. Setup**
+```bash
+# Clone repository
+git clone https://github.com/md-ryhan-uddin/document_extraction_ai_system.git
+cd document_extraction_ai_system
+
+# Configure environment
+cp .env.example .env
+nano .env  # Add: API_KEY=your-openai-api-key
+```
+
+**2. Build and Run**
+```bash
+# Build and start (first time)
+docker-compose up --build
+
+# Or run in background
+docker-compose up -d --build
+```
+
+**3. Access Application**
+- 🌐 Web Interface: http://localhost:8000/
+- 👤 Admin Panel: http://localhost:8000/admin/
+- 📊 API Docs: http://localhost:8000/api/
+
+**4. Create Admin User**
+```bash
+docker-compose exec web python manage.py createsuperuser
+```
+
+**5. Manage Containers**
+```bash
+# View logs
+docker-compose logs -f
+
+# Stop containers
+docker-compose down
+
+# Stop and remove volumes (fresh start)
+docker-compose down -v
+
+# Restart containers
+docker-compose restart
+```
+
+---
+
+### Production Docker Deployment
+
+Optimized build for production with Gunicorn and proper security.
+
+**1. Build Production Image**
+```bash
+docker build -f Dockerfile.production -t docai:latest .
+```
+
+**2. Run Production Container**
+```bash
+docker run -d \
+  -p 10000:10000 \
+  -e DEBUG=False \
+  -e ALLOWED_HOSTS=your-domain.com \
+  -e API_KEY=your-openai-api-key \
+  -e SECRET_KEY=your-secret-key \
+  -e DATABASE_URL=postgresql://user:pass@host:5432/db \
+  -v $(pwd)/media:/app/media \
+  --name docai-prod \
+  --restart unless-stopped \
+  docai:latest
+```
+
+**3. Production with Docker Compose**
+```yaml
+# docker-compose.prod.yml
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    ports:
+      - "10000:10000"
+    environment:
+      - DEBUG=False
+      - ALLOWED_HOSTS=your-domain.com
+      - API_KEY=${API_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+    volumes:
+      - ./media:/app/media
+    restart: unless-stopped
+```
+
+```bash
+# Run production
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+---
+
+### Docker Configuration Files
+
+**`Dockerfile`** (Development)
+- Hot-reload enabled
+- Volume mounts for code changes
+- Debug mode enabled
+
+**`Dockerfile.production`** (Production)
+- Multi-stage build for smaller image
+- System dependencies (poppler-utils, opencv)
+- Python dependencies optimized
+- Static files collected
+- Media directory with proper permissions
+- Gunicorn with 2 workers, 4 threads
+- Health checks enabled
+
+**`docker-compose.yml`** (Development)
+- Auto-restart on code changes
+- Volume mounts for persistence
+- SQLite database
+- Port 8000 exposed
+
+---
+
+### Docker Commands Reference
+
+```bash
+# View running containers
+docker ps
+
+# View all containers
+docker ps -a
+
+# View logs
+docker logs docai-prod
+docker-compose logs -f web
+
+# Execute commands in container
+docker-compose exec web python manage.py migrate
+docker-compose exec web python manage.py collectstatic --noinput
+docker-compose exec web python manage.py createsuperuser
+
+# Access container shell
+docker-compose exec web bash
+docker exec -it docai-prod bash
+
+# Stop container
+docker stop docai-prod
+docker-compose down
+
+# Remove container
+docker rm docai-prod
+
+# Remove image
+docker rmi docai:latest
+
+# Clean up everything
+docker-compose down -v
+docker system prune -a
+```
+
+---
+
+### Docker Volumes
+
+**Development (`docker-compose.yml`):**
+- `./media:/app/media` - Uploaded files persist locally
+- `./db.sqlite3:/app/db.sqlite3` - Database persists locally
+
+**Production:**
+- Use named volumes or bind mounts for data persistence
+- Consider external storage (S3, Cloudinary) for media files
+
+```yaml
+volumes:
+  media_data:
+  postgres_data:
+
+services:
+  web:
+    volumes:
+      - media_data:/app/media
+  
+  db:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+```
+
+---
+
+### Troubleshooting Docker
+
+**Port already in use:**
+```bash
+# Change port in docker-compose.yml
+ports:
+  - "8080:8000"  # Use 8080 instead
+```
+
+**Permission denied:**
+```bash
+# Fix media folder permissions
+sudo chown -R $USER:$USER media/
+```
+
+**Container won't start:**
+```bash
+# Check logs
+docker-compose logs
+
+# Rebuild without cache
+docker-compose build --no-cache
+```
+
+**Database locked:**
+```bash
+# Remove SQLite database and restart
+docker-compose down -v
+docker-compose up --build
+```
+
+</details>
+
+---
+
+## ⚙️ Production Configuration
+
+<details>
+<summary><b>🔧 Click to view production setup guide</b></summary>
 
 <br/>
 
@@ -928,90 +1264,59 @@ Recent fixes applied to:
 
 1. **DPI Settings**: Lower DPI (150) is faster, higher DPI (300) is more accurate
 2. **Database**: Use PostgreSQL for better concurrent access
-3. **Caching**: Implement Redis for API response caching
+3. **Caching**: LocMemCache (free) or Redis (paid) for API response caching
 4. **Async Processing**: Use Celery for background document processing
 5. **API Rate Limits**: Monitor AI API usage and implement rate limiting
 
-### Security Considerations
+### Security Checklist
 
-1. Change `SECRET_KEY` in production
-2. Set `DEBUG=False` in production
-3. Configure `ALLOWED_HOSTS` properly
-4. Use environment variables for sensitive data
-5. Implement user authentication for production use
-6. Set up HTTPS for production deployment
-7. Enable CSRF protection
-8. Implement file upload validation
-
-### Basic Production Setup
-
-1. Set environment variables:
-```bash
-DEBUG=False
-ALLOWED_HOSTS=your-domain.com
-```
-
-2. Install production dependencies:
-```bash
-pip install gunicorn psycopg2-binary
-```
-
-3. Collect static files:
-```bash
-python manage.py collectstatic
-```
-
-4. Use a production server (Gunicorn):
-```bash
-gunicorn docai_project.wsgi:application --bind 0.0.0.0:8000 --workers 4
-```
-
-5. Set up Nginx as reverse proxy
-```nginx
-server {
-    listen 80;
-    server_name your-domain.com;
-
-    location / {
-        proxy_pass http://127.0.0.1:8000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-    }
-
-    location /static/ {
-        alias /path/to/staticfiles/;
-    }
-
-    location /media/ {
-        alias /path/to/media/;
-    }
-}
-```
-
-6. Use systemd or supervisor for process management
-7. Set up SSL with Let's Encrypt
-
-### Production Checklist
-
+- [ ] Change `SECRET_KEY` in production
 - [ ] Set `DEBUG=False`
-- [ ] Configure `ALLOWED_HOSTS`
-- [ ] Use PostgreSQL database
-- [ ] Set up Gunicorn
-- [ ] Configure Nginx reverse proxy
-- [ ] Collect static files
-- [ ] Set up SSL/HTTPS
+- [ ] Configure `ALLOWED_HOSTS` properly
+- [ ] Use environment variables for sensitive data
 - [ ] Implement user authentication
+- [ ] Set up HTTPS (auto on Render)
+- [ ] Enable CSRF protection (enabled by default)
+- [ ] Implement file upload validation
 - [ ] Set up monitoring and logging
 - [ ] Configure backup strategy
-- [ ] Set up Celery for async processing
-- [ ] Implement rate limiting
-- [ ] Configure CORS if needed
+
+### Cache Configuration
+
+**LocMemCache (Current - Free Tier)**
+- ✅ No additional cost
+- ✅ Simple setup
+- ⚠️ Per-worker cache (not shared)
+- ⚠️ Lost on restart
+
+**Redis (Upgrade Option - $7/month)**
+- ✅ Shared across workers
+- ✅ Persistent cache
+- ✅ Advanced features
+- ❌ Additional cost
+
+**Enable Redis:**
+1. Add Redis service on Render
+2. Set `REDIS_URL` environment variable
+3. Uncomment Redis config in `settings.py`
+
+```python
+# In settings.py (already prepared)
+REDIS_URL = os.getenv('REDIS_URL')
+if REDIS_URL:
+    CACHES = {
+        'default': {
+            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+            'LOCATION': REDIS_URL,
+        }
+    }
+```
 
 </details>
 
 ---
 
-## Future Enhancements
+## 🎯 Future Enhancements
 
 Potential improvements:
 - User authentication and multi-tenancy
@@ -1035,7 +1340,8 @@ Potential improvements:
 
 ![Status](https://img.shields.io/badge/Status-✓_Production_Ready-success?style=for-the-badge)
 ![Version](https://img.shields.io/badge/Version-1.0.0-blue?style=for-the-badge)
-![Updated](https://img.shields.io/badge/Updated-November_2025-orange?style=for-the-badge)
+![Updated](https://img.shields.io/badge/Updated-December_2025-orange?style=for-the-badge)
+![Deploy](https://img.shields.io/badge/Deployed_on-Render-46E3B7?style=for-the-badge&logo=render)
 
 ---
 
